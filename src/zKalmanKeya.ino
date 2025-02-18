@@ -13,8 +13,8 @@ float varianceMean;
 float angleVariance;
 float heading;
 
-uint16_t lenVarianceBuffer = secondsVarianceBuffer / intervalINS;
-float varianceBuffer[100] = {0.0f};
+uint16_t lenVarianceBuffer = settings.secondsVarianceBuffer / settings.intervalINS;
+float varianceBuffer[200] = {0.0f};
 uint16_t indexVarBuffer = 0;
 
 void angleStimeUpdate(){
@@ -22,7 +22,7 @@ void angleStimeUpdate(){
     heading = atof(umHeading);
   else
     heading = atof(insHeading);
-  heading_rate = (heading - headingOld)/intervalINS;
+  heading_rate = (heading - headingOld)/settings.intervalINS;
   headingOld = heading;
   if(heading_rate>300)
     heading_rate-=360;
@@ -32,7 +32,7 @@ void angleStimeUpdate(){
   //dualWheelAngleWT61 = atan(headingRateWT/RAD_TO_DEG*calibrationData.wheelBase/speed*-1) * RAD_TO_DEG * workingDir;
 
   //update kalman measure variance R
-  if(speed > (minSpeedKalman*0.7) && abs(insWheelAngle)<30 && strstr(insStatus, "INS_SOLUTION")!=NULL){
+  if(speed > (settings.minSpeedKalman*0.7) && abs(insWheelAngle)<30 && strstr(insStatus, "INS_SOLUTION")!=NULL){
     varianceBuffer[indexVarBuffer++] = insWheelAngle;
     indexVarBuffer = indexVarBuffer % lenVarianceBuffer;
 
@@ -49,21 +49,21 @@ void angleStimeUpdate(){
     }
     angleVariance /= (lenVarianceBuffer - 1);
 
-    if (debugState == EXPERIMENT){
-      Serial.print("Variance ");
-      Serial.println(angleVariance);
+    if (debugState || send_EXPERIMENT){
+      debugPrint("Variance ");
+      debugPrintln(angleVariance);
     }
   }
-  if (debugState == EXPERIMENT){
-      Serial.print("speed ");
-      Serial.print(speed);
-      Serial.print(" insWheelAngle ");
-      Serial.print(insWheelAngle);
-      Serial.print(" insStatus ");
-      Serial.println(insStatus);
+  if (debugState == EXPERIMENT || send_EXPERIMENT){
+      debugPrint("speed ");
+      debugPrint(speed);
+      debugPrint(" insWheelAngle ");
+      debugPrint(insWheelAngle);
+      debugPrint(" insStatus ");
+      debugPrintln(insStatus);
     }
 
-  if(speed>minSpeedKalman)
+  if(speed>settings.minSpeedKalman)
     KalmanUpdate();
 }
 
@@ -72,9 +72,9 @@ void KalmanUpdate(){
 
   X = KalmanWheelAngle;
   // --- Kalman process ---
-  Pp = P + calibrationData.kalmanQ;                       // (PREDICTION) predizione della varianza dell'errore al prossimo step
+  Pp = P + settings.kalmanQ;                       // (PREDICTION) predizione della varianza dell'errore al prossimo step
   Xp = X + angleDiff;                                     // (PREDICTION) predizione dello stato al prossimo step
-  K = Pp/(Pp + (calibrationData.kalmanR*angleVariance));  // (CORRECTION) Kalman gain
+  K = Pp/(Pp + (settings.kalmanR*angleVariance));  // (CORRECTION) Kalman gain
   P = (1-K)*Pp;                                           // (CORRECTION) aggiornamento della varianza dell'errore di filtraggio
   X = Xp + K*(insWheelAngle-Xp);                          // (CORRECTION) stima di Kalman dell'output del sensore
 

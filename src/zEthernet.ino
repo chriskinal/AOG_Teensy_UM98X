@@ -2,7 +2,7 @@ void EthernetStart()
 {
 #ifdef ARDUINO_TEENSY41
   // start the Ethernet connection:
-  Serial.println("Initializing ethernet with static IP address");
+  debugPrintln("Initializing ethernet with static IP address");
 
   // try to congifure using IP:
   Ethernet.begin(mac, 0); // Start Ethernet with IP 0.0.0.0
@@ -10,14 +10,14 @@ void EthernetStart()
   // Check for Ethernet hardware present
   if (Ethernet.hardwareStatus() == EthernetNoHardware)
   {
-    Serial.println("Ethernet shield was not found. GPS via USB only.");
+    debugPrintln("Ethernet shield was not found. GPS via USB only.");
 
     return;
   }
 
   if (Ethernet.linkStatus() == LinkOFF)
   {
-    Serial.println("Ethernet cable is not connected - Who cares we will start ethernet anyway.");
+    debugPrintln("Ethernet cable is not connected - Who cares we will start ethernet anyway.");
   }
 
   // grab the ip from EEPROM
@@ -35,9 +35,9 @@ void EthernetStart()
   }
 
   Ethernet.setLocalIP(Eth_myip); // Change IP address to IP set by user
-  Serial.println("\r\nEthernet status OK");
-  Serial.print("IP set Manually: ");
-  Serial.println(Ethernet.localIP());
+  debugPrintln("\r\nEthernet status OK");
+  debugPrint("IP set Manually: ");
+  debugPrintln(Ethernet.localIP());
 
   Ethernet_running = true;
 
@@ -46,32 +46,39 @@ void EthernetStart()
   Eth_ipDestination[2] = Eth_myip[2];
   Eth_ipDestination[3] = 255;
 
-  Serial.print("\r\nEthernet IP of module: ");
-  Serial.println(Ethernet.localIP());
-  Serial.print("Ethernet sending to IP: ");
-  Serial.println(Eth_ipDestination);
-  Serial.print("All data sending to port: ");
-  Serial.println(portDestination);
+  debugPrint("\r\nEthernet IP of module: ");
+  debugPrintln(Ethernet.localIP());
+  debugPrint("Ethernet sending to IP: ");
+  debugPrintln(Eth_ipDestination);
+  debugPrint("All data sending to port: ");
+  debugPrintln(portDestination);
 
   // init UPD Port sending to AOG
   if (Eth_udpPAOGI.begin(portMy))
   {
-    Serial.print("Ethernet GPS UDP sending from port: ");
-    Serial.println(portMy);
+    debugPrint("Ethernet GPS UDP sending from port: ");
+    debugPrintln(portMy);
   }
 
   // init UPD Port getting NTRIP from AOG
   if (Eth_udpNtrip.begin(AOGNtripPort)) // AOGNtripPort
   {
-    Serial.print("Ethernet NTRIP UDP listening to port: ");
-    Serial.println(AOGNtripPort);
+    debugPrint("Ethernet NTRIP UDP listening to port: ");
+    debugPrintln(AOGNtripPort);
   }
 
   // init UPD Port getting AutoSteer data from AOG
   if (Eth_udpAutoSteer.begin(AOGAutoSteerPort)) // AOGAutoSteerPortipPort
   {
-    Serial.print("Ethernet AutoSteer UDP listening to & send from port: ");
-    Serial.println(AOGAutoSteerPort);
+    debugPrint("Ethernet AutoSteer UDP listening to & send from port: ");
+    debugPrintln(AOGAutoSteerPort);
+  }
+
+  // init UDP debug IN port
+  if (Eth_udpDebug.begin(portDebugIN))
+  {
+    debugPrint("Ethernet Debug UDP listening from port: ");
+    debugPrintln(portDebugIN);
   }
 #endif
 }

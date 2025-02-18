@@ -1,108 +1,382 @@
-import tkinter as tk
-from tkinter import ttk
-import serial
+import sys
+import socket
+import threading
+from collections import deque
+from PyQt5 import QtWidgets, QtCore, QtNetwork
+from PyQt5.QtCore import pyqtSignal, QObject, QSettings
+from PyQt5.QtNetwork import QUdpSocket
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.animation as animation
-import re
-import serial.tools.list_ports
-import time
 
-def start_plot():
-    port = port_select.get()
-    y_min = float(ymin_entry.get())
-    y_max = float(ymax_entry.get())
-    keep_points = int(points_entry.get())
+class UdpWorker(QObject):
+    new_plot_data = pyqtSignal(str)
+    new_debug_data = pyqtSignal(str)
+    
+    def __init__(self):
+        super().__init__()
+        self.running = True
+        
+    def setup_sockets(self):
+        self.plot_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.plot_sock.bind(('0.0.0.0', 6968))
+        self.plot_sock.settimeout(0.001)
+        
+        self.debug_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.debug_sock.bind(('0.0.0.0', 6969))
+        self.debug_sock.settimeout(0.001)
+        
+    def run(self):
+        self.setup_sockets()
+        while self.running:
+            try:
+                data, _ = self.plot_sock.recvfrom(1024)
+                if data:
+                    self.new_plot_data.emit(data.decode())
+                    
+                data, _ = self.debug_sock.recvfrom(1024)
+                if data:
+                    self.new_debug_data.emit(data.decode())
+            except:
+                pass
 
-    show_sens = sens_var.get()
-    show_ins = ins_var.get()
-    show_keya = keya_var.get()
-    show_kalman = kalman_var.get()
+class RealTimePlot(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        
+        self.udp_sender = QtNetwork.QUdpSocket()
+        self.teensy_ip = '192.168.5.255'
+        self.command_port = 9696
+        
+        self.initUI()
+        self.setup_threading()
+        self.data = {
+            'steerAngleSens': deque(maxlen=200),
+            'insWheelAngle': deque(maxlen=200),
+            'keyaEncoder': deque(maxlen=200),
+            'KalmanWheelAngle': deque(maxlen=200),
+            'timestamps': deque(maxlen=200),
+            'angleVariance': 0.0
+        }
+        self.visibility = {
+            'steerAngleSens': True,
+            'insWheelAngle': True,
+            'keyaEncoder': True,
+            'KalmanWheelAngle': True
+        }
+        self.request_states = {
+            'GPS': False,
+            'EXPERIMENT': False,
+            'KEYA': False,
+            'WAS': False,
+            'INFO': False
+        }
+        self.config = {
+            'using2serialGPS': True,
+            'usingWT61': False,
+            'interval_INS': 0.1,
+            'useKalmanForSensor': True,
+            'minSpeedKalman_m/s': 0.5,
+            'secondsVarBuf': 3.0,
+            'KalmanR': 0.3,
+            'KalmanQ': 0.0001
+        }
+        self.settings = QSettings("AGOPENGPS_", "AOG_Teensy_Config")
+        # Only load settings at startup; don't send them via UDP automatically.
+        self.load_settings()
+  
 
-    root.destroy()
+    def initUI(self):
+        self.setWindowTitle('Real-Time Steering Data Monitor')
+        self.setGeometry(100, 100, 1200, 800)
 
-    ser = serial.Serial(port, 115200, timeout=1)
-    steer_vals, ins_vals, keya_vals, kalman_vals = [], [], [], []
+        self.fig = plt.Figure()
+        self.ax = self.fig.add_subplot(111)
+        self.canvas = FigureCanvas(self.fig)
+        
+        self.debug_terminal = QtWidgets.QTextEdit()
+        self.debug_terminal.setReadOnly(True)
+        # Auto-scroll toggle for debug terminal
+        self.autoscroll_checkbox = QtWidgets.QCheckBox("Auto-scroll debug")
+        self.autoscroll_checkbox.setChecked(True)
+        
+        # Visible Signals group
+        self.checkbox_group = QtWidgets.QGroupBox("Visible Signals")
+        self.steer_check = QtWidgets.QCheckBox("Steer Angle Sensor")
+        self.ins_check = QtWidgets.QCheckBox("INS Wheel Angle")
+        self.keya_check = QtWidgets.QCheckBox("Keya Encoder")
+        self.kalman_check = QtWidgets.QCheckBox("Kalman Wheel Angle")
+        
+        self.steer_check.setChecked(True)
+        self.ins_check.setChecked(True)
+        self.keya_check.setChecked(True)
+        self.kalman_check.setChecked(True)
+        
+        self.steer_check.stateChanged.connect(lambda: self.toggle_visibility('steerAngleSens'))
+        self.ins_check.stateChanged.connect(lambda: self.toggle_visibility('insWheelAngle'))
+        self.keya_check.stateChanged.connect(lambda: self.toggle_visibility('keyaEncoder'))
+        self.kalman_check.stateChanged.connect(lambda: self.toggle_visibility('KalmanWheelAngle'))
+        
+        checkbox_layout = QtWidgets.QVBoxLayout()
+        checkbox_layout.addWidget(self.steer_check)
+        checkbox_layout.addWidget(self.ins_check)
+        checkbox_layout.addWidget(self.keya_check)
+        checkbox_layout.addWidget(self.kalman_check)
+        self.checkbox_group.setLayout(checkbox_layout)
+        
+        # Requested Info group
+        self.request_group = QtWidgets.QGroupBox("Requested Info")
+        self.gps_check = QtWidgets.QCheckBox("GPS")
+        self.experiment_check = QtWidgets.QCheckBox("EXPERIMENT")
+        self.keya_check_req = QtWidgets.QCheckBox("KEYA")
+        self.was_check = QtWidgets.QCheckBox("WAS")
+        self.info_check = QtWidgets.QCheckBox("INFO")
 
-    fig, ax = plt.subplots()
-    ln_sens, = ax.plot([], [], 'r-', label="sens") if show_sens else (None,)
-    ln_ins, = ax.plot([], [], 'g-', label="insAngle") if show_ins else (None,)
-    ln_keya, = ax.plot([], [], 'b-', label="keyaAngle") if show_keya else (None,)
-    ln_kalman, = ax.plot([], [], 'm-', label="Kalman") if show_kalman else (None,)
-    plt.legend()
+        self.gps_check.stateChanged.connect(lambda: self.send_request('GPS', self.gps_check.isChecked()))
+        self.experiment_check.stateChanged.connect(lambda: self.send_request('EXPERIMENT', self.experiment_check.isChecked()))
+        self.keya_check_req.stateChanged.connect(lambda: self.send_request('KEYA', self.keya_check_req.isChecked()))
+        self.was_check.stateChanged.connect(lambda: self.send_request('WAS', self.was_check.isChecked()))
+        self.info_check.stateChanged.connect(lambda: self.send_request('INFO', self.info_check.isChecked()))
+        
+        # Configuration group
+        self.config_group = QtWidgets.QGroupBox("Configuration Parameters")
+        config_layout = QtWidgets.QGridLayout()
 
-    def init():
-        ax.set_xlim(0, keep_points)
-        ax.set_ylim(y_min, y_max)
-        return [ln for ln in [ln_sens, ln_ins, ln_keya, ln_kalman] if ln]
+        self.using2serialGPS_check = QtWidgets.QCheckBox("Using 2 Serial GPS")
+        self.usingWT61_check = QtWidgets.QCheckBox("Using WT61")
+        self.interval_INS_spin = QtWidgets.QDoubleSpinBox()
+        self.useKalmanForSensor_check = QtWidgets.QCheckBox("Use Kalman for Sensor")
+        self.minSpeedKalman_spin = QtWidgets.QDoubleSpinBox()
+        self.secondsVarBuf_spin = QtWidgets.QDoubleSpinBox()
+        self.kalmanR_spin = QtWidgets.QDoubleSpinBox()
+        self.kalmanQ_spin = QtWidgets.QDoubleSpinBox()
 
-    def update():
-        line = ser.readline().decode('utf-8').strip()
-        match = re.findall(r"sens:(-?\d+\.?\d*),insAngle:(-?\d+\.?\d*),keyaAngle:(-?\d+\.?\d*),Kalman:(-?\d+\.?\d*)", line)
-        if match:
-            s, i, k, m = map(float, match[0])
-            if show_sens:
-                steer_vals.append(s)
-                steer_vals[:] = steer_vals[-keep_points:]
-                ln_sens.set_data(range(len(steer_vals)), steer_vals)
-            if show_ins:
-                ins_vals.append(i)
-                ins_vals[:] = ins_vals[-keep_points:]
-                ln_ins.set_data(range(len(ins_vals)), ins_vals)
-            if show_keya:
-                keya_vals.append(k)
-                keya_vals[:] = keya_vals[-keep_points:]
-                ln_keya.set_data(range(len(keya_vals)), keya_vals)
-            if show_kalman:
-                kalman_vals.append(m)
-                kalman_vals[:] = kalman_vals[-keep_points:]
-                ln_kalman.set_data(range(len(kalman_vals)), kalman_vals)
-            ax.set_xlim(0, keep_points)
-            ax.figure.canvas.draw()
-            ax.set_ylim(y_min, y_max)
-        root.after(10, update)
+        self.interval_INS_spin.setRange(0.05, 0.1)
+        self.interval_INS_spin.setDecimals(2)
+        self.interval_INS_spin.setSingleStep(0.05)
+        self.minSpeedKalman_spin.setRange(0.0, 2.0)
+        self.minSpeedKalman_spin.setDecimals(1)
+        self.minSpeedKalman_spin.setSingleStep(0.1)
+        self.secondsVarBuf_spin.setRange(1.0, 10.0)
+        self.secondsVarBuf_spin.setDecimals(1)
+        self.secondsVarBuf_spin.setSingleStep(0.1)
+        self.kalmanR_spin.setRange(0.001, 10.0)
+        self.kalmanR_spin.setDecimals(3)
+        self.kalmanR_spin.setSingleStep(0.1)
+        self.kalmanQ_spin.setRange(0.0001, 0.01)
+        self.kalmanQ_spin.setDecimals(6)
+        self.kalmanQ_spin.setSingleStep(0.0001)
 
-    ser.flushInput()
-    root.after(10, update)
-    plt.show()
+        config_layout.addWidget(QtWidgets.QLabel("Serial GPS:"), 0, 0)
+        config_layout.addWidget(self.using2serialGPS_check, 0, 1)
+        config_layout.addWidget(QtWidgets.QLabel("WT61:"), 1, 0)
+        config_layout.addWidget(self.usingWT61_check, 1, 1)
+        config_layout.addWidget(QtWidgets.QLabel("INS Interval (s):"), 2, 0)
+        config_layout.addWidget(self.interval_INS_spin, 2, 1)
+        config_layout.addWidget(QtWidgets.QLabel("Use Kalman:"), 3, 0)
+        config_layout.addWidget(self.useKalmanForSensor_check, 3, 1)
+        config_layout.addWidget(QtWidgets.QLabel("Min Kalman (m/s):"), 4, 0)
+        config_layout.addWidget(self.minSpeedKalman_spin, 4, 1)
+        config_layout.addWidget(QtWidgets.QLabel("Var Buffer (s):"), 5, 0)
+        config_layout.addWidget(self.secondsVarBuf_spin, 5, 1)
+        config_layout.addWidget(QtWidgets.QLabel("Kalman R:"), 6, 0)
+        config_layout.addWidget(self.kalmanR_spin, 6, 1)
+        config_layout.addWidget(QtWidgets.QLabel("Kalman Q:"), 7, 0)
+        config_layout.addWidget(self.kalmanQ_spin, 7, 1)
+        
+        # Button to load saved settings and send them via UDP
+        self.reload_settings_btn = QtWidgets.QPushButton("Send Saved Settings")
+        self.reload_settings_btn.clicked.connect(self.load_and_send_settings)
+        config_layout.addWidget(self.reload_settings_btn, 8, 0, 1, 2)
 
-root = tk.Tk()
-root.title("Serial Plotter Setup")
+        self.config_group.setLayout(config_layout)
 
-# Get the list of available serial ports
-available_ports = [port.device for port in serial.tools.list_ports.comports()]
+        # Connect configuration widget changes to sending updates (will be active after load)
+        self.using2serialGPS_check.stateChanged.connect(
+            lambda: self.send_config('using2serialGPS', self.using2serialGPS_check.isChecked()))
+        self.usingWT61_check.stateChanged.connect(
+            lambda: self.send_config('usingWT61', self.usingWT61_check.isChecked()))
+        self.interval_INS_spin.valueChanged.connect(
+            lambda: self.send_config('interval_INS', self.interval_INS_spin.value()))
+        self.useKalmanForSensor_check.stateChanged.connect(
+            lambda: self.send_config('useKalmanForSensor', self.useKalmanForSensor_check.isChecked()))
+        self.minSpeedKalman_spin.valueChanged.connect(
+            lambda: self.send_config('minSpeedKalman_m/s', self.minSpeedKalman_spin.value()))
+        self.secondsVarBuf_spin.valueChanged.connect(
+            lambda: self.send_config('secondsVarBuf', self.secondsVarBuf_spin.value()))
+        self.kalmanR_spin.valueChanged.connect(
+            lambda: self.send_config('KalmanR', self.kalmanR_spin.value()))
+        self.kalmanQ_spin.valueChanged.connect(
+            lambda: self.send_config('KalmanQ', self.kalmanQ_spin.value()))
 
-tk.Label(root, text="COM Port (Windows):").grid(row=0, column=0, padx=5, pady=5)
-port_select = ttk.Combobox(root, values=available_ports)
-if available_ports:
-    port_select.current(0)
-port_select.grid(row=0, column=1, padx=5, pady=5)
+        request_layout = QtWidgets.QVBoxLayout()
+        request_layout.addWidget(self.gps_check)
+        request_layout.addWidget(self.experiment_check)
+        request_layout.addWidget(self.keya_check_req)
+        request_layout.addWidget(self.was_check)
+        request_layout.addWidget(self.info_check)
+        self.request_group.setLayout(request_layout)
 
-tk.Label(root, text="Y-axis Min:").grid(row=1, column=0, padx=5, pady=5)
-ymin_entry = ttk.Entry(root)
-ymin_entry.insert(0, "-50")
-ymin_entry.grid(row=1, column=1, padx=5, pady=5)
+        main_layout = QtWidgets.QVBoxLayout()
+        top_layout = QtWidgets.QHBoxLayout()
+        left_top = QtWidgets.QVBoxLayout()
+        left_top.addWidget(self.canvas)
+        
+        right_top = QtWidgets.QVBoxLayout()
+        right_top.addWidget(self.checkbox_group)
+        right_top.addWidget(self.request_group)
+        right_top.addWidget(self.config_group)
+        right_top.addStretch()
+        
+        top_layout.addLayout(left_top, 90)
+        top_layout.addLayout(right_top, 10)
+        
+        bottom_layout = QtWidgets.QVBoxLayout()
+        bottom_layout.addWidget(self.debug_terminal)
+        bottom_layout.addWidget(self.autoscroll_checkbox)
 
-tk.Label(root, text="Y-axis Max:").grid(row=2, column=0, padx=5, pady=5)
-ymax_entry = ttk.Entry(root)
-ymax_entry.insert(0, "50")
-ymax_entry.grid(row=2, column=1, padx=5, pady=5)
+        main_layout.addLayout(top_layout, 60)
+        main_layout.addLayout(bottom_layout, 40)
+        self.setLayout(main_layout)
 
-tk.Label(root, text="Points to Keep:").grid(row=3, column=0, padx=5, pady=5)
-points_entry = ttk.Entry(root)
-points_entry.insert(0, "100")
-points_entry.grid(row=3, column=1, padx=5, pady=5)
+    def toggle_visibility(self, signal_name):
+        self.visibility[signal_name] = not self.visibility[signal_name]
+        self.update_plot(None)
 
-sens_var = tk.BooleanVar(value=True)
-ins_var = tk.BooleanVar(value=True)
-keya_var = tk.BooleanVar(value=True)
-kalman_var = tk.BooleanVar(value=True)
+    def setup_threading(self):
+        self.worker = UdpWorker()
+        self.thread = QtCore.QThread()
+        self.worker.moveToThread(self.thread)
+        self.worker.new_plot_data.connect(self.handle_plot_data)
+        self.worker.new_debug_data.connect(self.handle_debug_data)
+        self.thread.started.connect(self.worker.run)
+        self.thread.start()
+        
+        self.ani = animation.FuncAnimation(
+            self.fig, self.update_plot, interval=100, cache_frame_data=False)
 
-tk.Checkbutton(root, text="Show sens", variable=sens_var).grid(row=4, column=0, padx=5, pady=5)
-tk.Checkbutton(root, text="Show insAngle", variable=ins_var).grid(row=4, column=1, padx=5, pady=5)
-tk.Checkbutton(root, text="Show keyaAngle", variable=keya_var).grid(row=5, column=0, padx=5, pady=5)
-tk.Checkbutton(root, text="Show Kalman", variable=kalman_var).grid(row=5, column=1, padx=5, pady=5)
+    @QtCore.pyqtSlot(str)
+    def handle_plot_data(self, data):
+        values = data.split(',')
+        if len(values) == 6:
+            self.data['timestamps'].append(float(values[0]))
+            self.data['steerAngleSens'].append(float(values[1]))
+            self.data['insWheelAngle'].append(float(values[2]))
+            self.data['keyaEncoder'].append(float(values[3]))
+            self.data['KalmanWheelAngle'].append(float(values[4]))
+            self.data['angleVariance'] = float(values[5])
 
-btn_start = ttk.Button(root, text="Start Plot", command=start_plot)
-btn_start.grid(row=6, column=0, columnspan=2, padx=5, pady=5)
+    @QtCore.pyqtSlot(str)
+    def handle_debug_data(self, message):
+        self.debug_terminal.insertPlainText(message)
+        print(message, end="")
+        if self.autoscroll_checkbox.isChecked():
+            self.debug_terminal.verticalScrollBar().setValue(
+                self.debug_terminal.verticalScrollBar().maximum())
 
-root.mainloop()
+    def update_plot(self, frame):
+        self.ax.clear()
+        if self.data['timestamps']:
+            t = [(ts - self.data['timestamps'][0]) / 1000 for ts in self.data['timestamps']]
+            
+            if self.visibility['steerAngleSens']:
+                self.ax.plot(t, self.data['steerAngleSens'], label='Steer Angle Sensor')
+            if self.visibility['insWheelAngle']:
+                self.ax.plot(t, self.data['insWheelAngle'], label='INS Wheel Angle')
+            if self.visibility['keyaEncoder']:
+                self.ax.plot(t, self.data['keyaEncoder'], label='Keya Encoder')
+            if self.visibility['KalmanWheelAngle']:
+                self.ax.plot(t, self.data['KalmanWheelAngle'], label='Kalman Wheel Angle')
+            
+            self.ax.text(0.02, 0.95, f"Variance: {self.data['angleVariance']:.5f}",
+                         transform=self.ax.transAxes, fontsize=10,
+                         verticalalignment='top', bbox=dict(facecolor='white', alpha=0.7))
+            
+            self.ax.legend()
+            self.ax.set_xlabel('Time (s)')
+            self.ax.set_ylabel('Angle (degrees)')
+            self.ax.set_title('Real-Time Steering Angles')
+        self.canvas.draw()
+        
+    def load_settings(self):
+        # Load saved values or defaults
+        self.config['using2serialGPS'] = self.settings.value("using2serialGPS", True, bool)
+        self.config['usingWT61'] = self.settings.value("usingWT61", False, bool)
+        self.config['interval_INS'] = self.settings.value("interval_INS", 0.1, float)
+        self.config['useKalmanForSensor'] = self.settings.value("useKalmanForSensor", True, bool)
+        self.config['minSpeedKalman_m/s'] = self.settings.value("minSpeedKalman_m/s", 0.5, float)
+        self.config['secondsVarBuf'] = self.settings.value("secondsVarBuf", 3.0, float)
+        self.config['KalmanR'] = self.settings.value("KalmanR", 0.3, float)
+        self.config['KalmanQ'] = self.settings.value("KalmanQ", 0.0001, float)
+
+        # Block signals so no UDP message is sent on startup.
+        self.using2serialGPS_check.blockSignals(True)
+        self.using2serialGPS_check.setChecked(self.config['using2serialGPS'])
+        self.using2serialGPS_check.blockSignals(False)
+        
+        self.usingWT61_check.blockSignals(True)
+        self.usingWT61_check.setChecked(self.config['usingWT61'])
+        self.usingWT61_check.blockSignals(False)
+        
+        self.interval_INS_spin.blockSignals(True)
+        self.interval_INS_spin.setValue(self.config['interval_INS'])
+        self.interval_INS_spin.blockSignals(False)
+        
+        self.useKalmanForSensor_check.blockSignals(True)
+        self.useKalmanForSensor_check.setChecked(self.config['useKalmanForSensor'])
+        self.useKalmanForSensor_check.blockSignals(False)
+        
+        self.minSpeedKalman_spin.blockSignals(True)
+        self.minSpeedKalman_spin.setValue(self.config['minSpeedKalman_m/s'])
+        self.minSpeedKalman_spin.blockSignals(False)
+        
+        self.secondsVarBuf_spin.blockSignals(True)
+        self.secondsVarBuf_spin.setValue(self.config['secondsVarBuf'])
+        self.secondsVarBuf_spin.blockSignals(False)
+        
+        self.kalmanR_spin.blockSignals(True)
+        self.kalmanR_spin.setValue(self.config['KalmanR'])
+        self.kalmanR_spin.blockSignals(False)
+        
+        self.kalmanQ_spin.blockSignals(True)
+        self.kalmanQ_spin.setValue(self.config['KalmanQ'])
+        self.kalmanQ_spin.blockSignals(False)
+
+    def send_all_configs(self):
+        for key, value in self.config.items():
+            self.send_config(key, value)
+
+    def load_and_send_settings(self):
+        self.load_settings()
+        self.send_all_configs()
+    
+    def send_config(self, param, value):
+        self.settings.setValue(param, value)
+        # Convert boolean to integer if necessary
+        if value is True:
+            value = 1
+        elif value is False:
+            value = 0
+        message = f"{param}:{value}"
+        self.udp_sender.writeDatagram(message.encode(), 
+                                      QtNetwork.QHostAddress(self.teensy_ip), 
+                                      self.command_port)
+    
+    def send_request(self, command, state):
+        self.request_states[command] = state
+        message = f"{command}:{1 if state else 0}"
+        self.udp_sender.writeDatagram(message.encode(), 
+                                      QtNetwork.QHostAddress(self.teensy_ip), 
+                                      self.command_port)
+
+    def closeEvent(self, event):
+        self.worker.running = False
+        self.thread.quit()
+        self.thread.wait()
+        super().closeEvent(event)
+
+if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+    ex = RealTimePlot()
+    ex.show()
+    sys.exit(app.exec_())

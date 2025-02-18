@@ -40,8 +40,8 @@ char solQuality[2];
 // If odd characters showed up.
 void errorHandler()
 {
-  if(debugState == GPS)
-    Serial.println("parser error");
+  if(debugState == GPS || send_GPS)
+    debugPrintln("parser error");
 }
 
 void GGA_Handler() // Rec'd GGA
@@ -89,9 +89,9 @@ void GGA_Handler() // Rec'd GGA
 
   gpsReadyTime = systick_millis_count; // Used for GGA timeout (LED's ETC)
 
-  if(debugState == GPS){
-    Serial.print(systick_millis_count);
-    Serial.print("  GGA  ");
+  if(debugState == GPS || send_GPS){
+    debugPrint(systick_millis_count);
+    debugPrint("  GGA  ");
   }
 }
 
@@ -107,9 +107,9 @@ void VTG_Handler()
   speed = atof(speedKnots) * 1852 / 3600; // m/s
 
   // if(debugState == EXPERIMENT){
-  //   Serial.print(" VTGspeed:");
-  //   Serial.print(speed);
-  //   Serial.print("  ");
+  //   debugPrint(" VTGspeed:");
+  //   debugPrint(speed);
+  //   debugPrint("  ");
   // }
 
   float headingVTG = atof(vtgHeading);
@@ -118,9 +118,9 @@ void VTG_Handler()
   else
     workingDir=1;
 
-  if(debugState == GPS){
-    Serial.print(systick_millis_count);
-    Serial.print("  VTG  ");
+  if(debugState == GPS || send_GPS){
+    debugPrint(systick_millis_count);
+    debugPrint("  VTG  ");
   }
 }
 
@@ -143,9 +143,9 @@ void readSerialIns(char c){
           insStart=true;
           for(int g=0; g<20; g++)
             bufferSERIAL[g] = '\0';
-          if(debugState == GPS){
-            Serial.print(systick_millis_count);
-            Serial.print("  INS  ");
+          if(debugState == GPS || send_GPS){
+            debugPrint(systick_millis_count);
+            debugPrint("  INS  ");
           }
         }
         else if(c == ',' && insStart){
@@ -155,47 +155,53 @@ void readSerialIns(char c){
               for(int g=0; g<20; g++){
                 insStatus[g] = bufferSERIAL[g];
               }
-              if(debugState == GPS){
-                Serial.print("INSstatus: ");
-                Serial.println(bufferSERIAL);
+              if(debugState == GPS || send_GPS){
+                debugPrint("INSstatus: ");
+                debugPrint(bufferSERIAL);
+                debugPrint("  ");
               }
               break;
             case 4: //latitude
-              if(debugState == GPS){
-                Serial.print("latitude: ");
-                Serial.println(bufferSERIAL);
+              if(debugState == GPS || send_GPS){
+                debugPrint("latitude: ");
+                debugPrint(bufferSERIAL);
+                debugPrint("  ");
               }
               DegreesToDegMinSec(atof(bufferSERIAL), insLatitude, 12);
               break;
             case 5: //longitude
-              if(debugState == GPS){
-                Serial.print("longitude: ");
-                Serial.println(bufferSERIAL);
+              if(debugState == GPS || send_GPS){
+                debugPrint("longitude: ");
+                debugPrint(bufferSERIAL);
+                debugPrint("  ");
               }
               DegreesToDegMinSec(atof(bufferSERIAL), insLongitude, 12);
               break;
             case 11: //roll
-              if(debugState == GPS){
-                Serial.print("roll:");
-                Serial.println(bufferSERIAL);
+              if(debugState == GPS || send_GPS){
+                debugPrint("roll:");
+                debugPrint(bufferSERIAL);
+                debugPrint("  ");
               }
               for(int g=0; g<5; g++)
                 insRoll[g] = bufferSERIAL[g];
               insRoll[5] = '\0';
               break;
             case 12: //pitch
-              if(debugState == GPS){
-                Serial.print("pitch: ");
-                Serial.println(bufferSERIAL);
+              if(debugState == GPS || send_GPS){
+                debugPrint("pitch: ");
+                debugPrint(bufferSERIAL);
+                debugPrint("  ");
               }
               for(int g=0; g<5; g++)
                 insPitch[g] = bufferSERIAL[g];
               insPitch[5] = '\0';
               break;
             case 13: //heading
-              if(debugState == GPS){
-                Serial.print("heading: ");
-                Serial.println(bufferSERIAL);
+              if(debugState == GPS || send_GPS){
+                debugPrint("heading: ");
+                debugPrint(bufferSERIAL);
+                debugPrint("  ");
               }
               for(int g=0; g<6; g++)
                 insHeading[g] = bufferSERIAL[g];
@@ -203,8 +209,8 @@ void readSerialIns(char c){
               break;
             // case 8: //north vel
             //   if(debugState == EXPERIMENT){
-            //     Serial.print("north_vel: ");
-            //     Serial.print(atof(bufferSERIAL));
+            //     debugPrint("north_vel: ");
+            //     debugPrint(atof(bufferSERIAL));
             //   }
             //   for(int g=0; g<6; g++)
             //     velocity[g] = bufferSERIAL[g];
@@ -212,13 +218,13 @@ void readSerialIns(char c){
             //   break;
             // case 9: //east vel
             //   if(debugState == EXPERIMENT){
-            //     Serial.print(" east_vel: ");
-            //     Serial.print(atof(bufferSERIAL));
+            //     debugPrint(" east_vel: ");
+            //     debugPrint(atof(bufferSERIAL));
             //   }
             //   insSpeed = sqrt(sq(atof(velocity))+sq(atof(bufferSERIAL)));
             //   if(debugState == GPS || debugState == EXPERIMENT){
-            //     Serial.print(" vel: ");
-            //     Serial.println(insSpeed);
+            //     debugPrint(" vel: ");
+            //     debugPrintln(insSpeed);
             //   }
             //   break;
           }
@@ -238,7 +244,7 @@ void readSerialIns(char c){
           index1++;
         }
       }
-      else if(!using2serialGPS)
+      else if(!settings.using2serialGPS)
         parser << c;
 }
 
@@ -258,24 +264,24 @@ void HPR_Handler()
     rollDual = atof(umRoll); //-0.2
 
     if(debugState == ROLL){
-      Serial.print("rollDual:");
-      Serial.print(rollDual);
+      debugPrint("rollDual:");
+      debugPrint(rollDual);
     }
 
     rollDual = rollKF.updateEstimate(rollDual);
 
     if(debugState == ROLL){
-      Serial.print("rollKF:");
-      Serial.print(rollDual);
-      Serial.print(",angleWT:");
-      Serial.println(rollWT, 3);
+      debugPrint("rollKF:");
+      debugPrint(rollDual);
+      debugPrint(",angleWT:");
+      debugPrintln(rollWT, 3);
     }
   }
   
   dualReadyINS++;
 
-  if(debugState == GPS)
-    Serial.println("  HPR  ");
+  if(debugState == GPS || send_GPS)
+    debugPrintln("  HPR  ");
 
   angleStimeUpdate();
 }
@@ -293,8 +299,8 @@ void BuildNmea(void)
   strcat(nmea, ",");
 
   if(strstr(insStatus, "INS_SOLUTION")!=NULL && makeOGI) { //use INS if solution good
-    if(debugState == GPS)
-      Serial.println("using INS");
+    if(debugState == GPS || send_GPS)
+      debugPrintln("using INS");
 
     strcat(nmea, insLatitude);
     strcat(nmea, ",");
@@ -309,8 +315,8 @@ void BuildNmea(void)
     strcat(nmea, ",");
   }
   else {
-    if(debugState == GPS)
-      Serial.println("using GGA");
+    if(debugState == GPS || send_GPS)
+      debugPrintln("using GGA");
     strcat(nmea, latitude);
     strcat(nmea, ",");
 
@@ -368,7 +374,7 @@ void BuildNmea(void)
 
   if (sendUSB)
   {
-    SerialAOG.write(nmea);
+    Serial.write(nmea);
   } // Send USB GPS data if enabled in user settings
 
   if (Ethernet_running) // If ethernet running send the GPS there
@@ -379,8 +385,8 @@ void BuildNmea(void)
     Eth_udpPAOGI.endPacket();
   }
 
-  if(debugState == GPS)
-    Serial.println(nmea);
+  if(debugState == GPS || send_GPS)
+    debugPrintln("NMEA Sent");
 }
 
 void CalculateChecksum(void)

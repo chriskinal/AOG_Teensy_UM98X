@@ -24,8 +24,8 @@ void calcSteeringPID(void)
   else if (pwmDrive > 0)
     pwmDrive += steerSettings.minPWM;
 
-  // Serial.print(newMax); //The actual steering angle in degrees
-  // Serial.print(",");
+  // debugPrint(newMax); //The actual steering angle in degrees
+  // debugPrint(",");
 
   // limit the pwm drive
   if (pwmDrive > newMax)

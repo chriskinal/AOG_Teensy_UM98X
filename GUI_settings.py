@@ -4,7 +4,7 @@ from tkinter import ttk
 import json
 
 # ====== NETWORK SETTINGS ======
-SERVER_IP = '192.168.5.120'  # Change to your Arduino's IP
+SERVER_IP = '192.168.5.255'  # Change to your Arduino's IP
 SERVER_PORT = 8888           # Change to your UDP port
 
 # ====== HEADER DEFINITION ======
@@ -65,7 +65,7 @@ frame.grid(row=0, column=0, padx=10, pady=10)
 # Field labels for the 10 float values
 labels = [
     "WheelBase", "IMUtoANTx", "IMUtoANTy", "IMUtoANTz", 
-    "INSx", "INSy", "INSz", "INSanglex", "INSangley", "INSanglez", "KalmanR", "KalmanQ"
+    "INSx", "INSy", "INSz", "INSanglex", "INSangley", "INSanglez"
 ]
 
 # Entry fields for the 10 float values

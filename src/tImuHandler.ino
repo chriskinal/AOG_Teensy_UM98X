@@ -29,17 +29,17 @@ void imuSetup(){
   {
     bno08xAddress = bno08xAddresses[i];
 
-    // Serial.print("\r\nChecking for BNO08X on ");
-    // Serial.println(bno08xAddress, HEX);
+    // debugPrint("\r\nChecking for BNO08X on ");
+    // debugPrintln(bno08xAddress, HEX);
     ImuWire.beginTransmission(bno08xAddress);
     error = ImuWire.endTransmission();
 
     if (error == 0)
     {
-      // Serial.println("Error = 0");
-      Serial.print("0x");
-      Serial.print(bno08xAddress, HEX);
-      Serial.println(" BNO08X Ok.");
+      // debugPrintln("Error = 0");
+      debugPrint("0x");
+      debugPrint(bno08xAddress, HEX);
+      debugPrintln(" BNO08X Ok.");
 
       // Initialize BNO080 lib
       if (bno08x.begin(bno08xAddress, ImuWire)) //??? Passing NULL to non pointer argument, remove maybe ???
@@ -62,15 +62,15 @@ void imuSetup(){
       }
       else
       {
-        Serial.println("BNO080 not detected at given I2C address.");
+        debugPrintln("BNO080 not detected at given I2C address.");
       }
     }
     else
     {
-      // Serial.println("Error = 4");
-      Serial.print("0x");
-      Serial.print(bno08xAddress, HEX);
-      Serial.println(" BNO08X not Connected or Found");
+      // debugPrintln("Error = 4");
+      debugPrint("0x");
+      debugPrint(bno08xAddress, HEX);
+      debugPrintln(" BNO08X not Connected or Found");
     }
     if (useBNO08x)
       break;
@@ -142,22 +142,22 @@ void readBNO()
     //float y = bno08x.getAccelY();
     //float z = bno08x.getAccelZ();
 
-    // Serial.print(x, 4);
-    // Serial.print(",");
-    // Serial.print(y, 4);
-    // Serial.print(",");
-    // Serial.println(z, 4);
+    // debugPrint(x, 4);
+    // debugPrint(",");
+    // debugPrint(y, 4);
+    // debugPrint(",");
+    // debugPrintln(z, 4);
 
     // if(bno08x.calibrationComplete() == true)
     //       {
-    //         Serial.println("Calibration data successfully stored");
+    //         debugPrintln("Calibration data successfully stored");
     //         delay(1000);
     //       }
     // else 
-    //   Serial.println("not");
+    //   debugPrintln("not");
 
-    //Serial.print("imuRoll:");
-    //Serial.println(imuRoll);
+    //debugPrint("imuRoll:");
+    //debugPrintln(imuRoll);
   }
 }
 
@@ -189,7 +189,7 @@ void imuHandler()
     {
       if (usingUM982)
       {
-        snprintf (rollPanda, sizeof(rollPanda), "%f", rollWT);
+        snprintf (rollPanda, sizeof(rollPanda), "%.3f", rollWT);
         strcpy(headingPanda, umHeading);
       }
       else

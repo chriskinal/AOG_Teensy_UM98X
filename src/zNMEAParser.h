@@ -367,7 +367,7 @@ public:
     {
       if (getHandler(inToken) == -1)
       {
-        strncpy(mHandlers[mHandlerCount].mToken, inToken, 5);
+        memcpy(mHandlers[mHandlerCount].mToken, inToken, 5);
         mHandlers[mHandlerCount].mToken[5] = '\0';
         mHandlers[mHandlerCount].mHandler = inHandler;
         mHandlerCount++;
@@ -417,7 +417,7 @@ public:
   void operator<<(char inChar)
   {
     int8_t tmp;
-    // Serial.println(inChar);
+    // debugPrintln(inChar);
 
     switch (mState)
     {

@@ -110,7 +110,7 @@ boolean BNO080::beginSPI(uint8_t user_CSPin, uint8_t user_WAKPin, uint8_t user_I
 	waitForSPI();
 
 	// if(wakeBNO080() == false) //Bring IC out of sleep after reset
-	//   Serial.println("BNO080 did not wake up");
+	//   debugPrintln("BNO080 did not wake up");
 
 	_spiPort->begin(); // Turn on SPI hardware
 

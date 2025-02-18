@@ -27,27 +27,27 @@ void setupWT61() {
 	WitSerialWriteRegister(SensorUartSend);
 	WitRegisterCallBack(SensorDataUpdata);
   	WitDelayMsRegister(Delayms);
-	Serial.println("WT61 begin");
+	debugPrintln("WT61 begin");
 	BeginSensor();
 
-	if(WitSetContent(RSW_ACC|RSW_GYRO|RSW_ANGLE) != WIT_HAL_OK) Serial.print("Set RSW Error");
-	if(WitSetBandwidth(BANDWIDTH_5HZ) != WIT_HAL_OK) Serial.println("Set Bandwidth Error");
+	if(WitSetContent(RSW_ACC|RSW_GYRO|RSW_ANGLE) != WIT_HAL_OK) debugPrint("Set RSW Error");
+	if(WitSetBandwidth(BANDWIDTH_5HZ) != WIT_HAL_OK) debugPrintln("Set Bandwidth Error");
 
-	if(WitSetUartBaud(WIT_BAUD_115200) != WIT_HAL_OK) Serial.println("Set Baud Error");
+	if(WitSetUartBaud(WIT_BAUD_115200) != WIT_HAL_OK) debugPrintln("Set Baud Error");
 	else 	SerialWT61.begin(c_uiBaud[WIT_BAUD_115200]);
 
-	if(WitSetOutputRate(RRATE_100HZ) != WIT_HAL_OK) Serial.println("Set Baud Error");
-	else Serial.println("Set 100Hz return rate");
+	if(WitSetOutputRate(RRATE_100HZ) != WIT_HAL_OK) debugPrintln("Set Baud Error");
+	else debugPrintln("Set 100Hz return rate");
 
-	// Serial.println("calibrating WT61");
-	// if(WitSetInstallDir(ORIENT_HOR) != WIT_HAL_OK) Serial.print("error setDir");
+	// debugPrintln("calibrating WT61");
+	// if(WitSetInstallDir(ORIENT_HOR) != WIT_HAL_OK) debugPrint("error setDir");
 	// delay(10);
-	// if(WitStartAccCali() != WIT_HAL_OK) Serial.print("error StartCal");
+	// if(WitStartAccCali() != WIT_HAL_OK) debugPrint("error StartCal");
 	// delay(5000);
-	// if(WitStopAccCali() != WIT_HAL_OK) Serial.print("error StopCal");
+	// if(WitStopAccCali() != WIT_HAL_OK) debugPrint("error StopCal");
 	// delay(2000);
-	// if(WitCaliRefAngle() != WIT_HAL_OK) Serial.print("error refAngle");
-	// if(WitAlgo(ALGRITHM6) != WIT_HAL_OK) Serial.print("error algo");
+	// if(WitCaliRefAngle() != WIT_HAL_OK) debugPrint("error refAngle");
+	// if(WitAlgo(ALGRITHM6) != WIT_HAL_OK) debugPrint("error algo");
 }
 
 float fAcc[3], fGyro[3], fAngle[3];
@@ -68,13 +68,13 @@ void loopWT61() {
 		}
 		if(s_cDataUpdate & ACC_UPDATE)
 		{
-			// Serial.print("acc:");
-			// Serial.print(fAcc[0], 3);
-			// Serial.print(" ");
-			// Serial.print(fAcc[1], 3);
-			// Serial.print(" ");
-			// Serial.print(fAcc[2], 3);
-			// Serial.print("\r\n");
+			// debugPrint("acc:");
+			// debugPrint(fAcc[0], 3);
+			// debugPrint(" ");
+			// debugPrint(fAcc[1], 3);
+			// debugPrint(" ");
+			// debugPrint(fAcc[2], 3);
+			// debugPrint("\r\n");
 			s_cDataUpdate &= ~ACC_UPDATE;
 			accXWT = fAcc[0];
 			tempWT=sReg[TEMP]/100.0f;
@@ -82,35 +82,35 @@ void loopWT61() {
 
 		if(s_cDataUpdate & GYRO_UPDATE)
 		{
-			//Serial.print("gyro:");
-			// Serial.print(fGyro[0], 1);
-			// Serial.print(",");
-			// Serial.print(fGyro[1], 1);
-			// Serial.print(" ");
-			//Serial.print(fGyro[2], 1);
-			//Serial.print("\r\n");
+			//debugPrint("gyro:");
+			// debugPrint(fGyro[0], 1);
+			// debugPrint(",");
+			// debugPrint(fGyro[1], 1);
+			// debugPrint(" ");
+			//debugPrint(fGyro[2], 1);
+			//debugPrint("\r\n");
 			headingRateWT = headingRate.updateEstimate(fGyro[2]);
-			//Serial.print("gyroKF:");
-			//Serial.print(headingRateWT, 1);
-			//Serial.print("\r\n");
+			//debugPrint("gyroKF:");
+			//debugPrint(headingRateWT, 1);
+			//debugPrint("\r\n");
 			s_cDataUpdate &= ~GYRO_UPDATE;
 		}
 		if(s_cDataUpdate & ANGLE_UPDATE)
 		{
-			//Serial.print("angleWT:");
-			//Serial.print(fAngle[0], 3);
-			// Serial.print(" ");
-			// Serial.print(fAngle[1], 3);
-			// Serial.print(" ");
-			// Serial.print(fAngle[2], 3);
-			//Serial.print("\r\n");
+			//debugPrint("angleWT:");
+			//debugPrint(fAngle[0], 3);
+			// debugPrint(" ");
+			// debugPrint(fAngle[1], 3);
+			// debugPrint(" ");
+			// debugPrint(fAngle[2], 3);
+			//debugPrint("\r\n");
 			s_cDataUpdate &= ~ANGLE_UPDATE;
 			if (steerConfig.IsUseY_Axis)
 				rollWT = fAngle[1] + offsetRollWT;
 			else
 				rollWT = fAngle[0] + offsetRollWT;
-			//Serial.print("rollWT:");
-			//Serial.println(rollWT, 3);
+			//debugPrint("rollWT:");
+			//debugPrintln(rollWT, 3);
 			headingWT = fAngle[2];
 		}
 		s_cDataUpdate = 0;
@@ -144,59 +144,59 @@ void CopeCmdData(unsigned char ucData)
 }
 // static void ShowHelp(void)
 // {
-// 	Serial.print("\r\n************************	 WIT_SDK_DEMO	************************");
-// 	Serial.print("\r\n************************          HELP           ************************\r\n");
-// 	Serial.print("UART SEND:a\\r\\n   Acceleration calibration.\r\n");
-// 	Serial.print("UART SEND:m\\r\\n   Magnetic field calibration,After calibration send:   e\\r\\n   to indicate the end\r\n");
-// 	Serial.print("UART SEND:U\\r\\n   Bandwidth increase.\r\n");
-// 	Serial.print("UART SEND:u\\r\\n   Bandwidth reduction.\r\n");
-// 	Serial.print("UART SEND:B\\r\\n   Baud rate increased to 115200.\r\n");
-// 	Serial.print("UART SEND:b\\r\\n   Baud rate reduction to 9600.\r\n");
-// 	Serial.print("UART SEND:R\\r\\n   The return rate increases to 10Hz.\r\n");
-//   Serial.print("UART SEND:r\\r\\n   The return rate reduction to 1Hz.\r\n");
-//   Serial.print("UART SEND:C\\r\\n   Basic return content: acceleration, angular velocity, angle, magnetic field.\r\n");
-//   Serial.print("UART SEND:c\\r\\n   Return content: acceleration.\r\n");
-//   Serial.print("UART SEND:h\\r\\n   help.\r\n");
-// 	Serial.print("******************************************************************************\r\n");
+// 	debugPrint("\r\n************************	 WIT_SDK_DEMO	************************");
+// 	debugPrint("\r\n************************          HELP           ************************\r\n");
+// 	debugPrint("UART SEND:a\\r\\n   Acceleration calibration.\r\n");
+// 	debugPrint("UART SEND:m\\r\\n   Magnetic field calibration,After calibration send:   e\\r\\n   to indicate the end\r\n");
+// 	debugPrint("UART SEND:U\\r\\n   Bandwidth increase.\r\n");
+// 	debugPrint("UART SEND:u\\r\\n   Bandwidth reduction.\r\n");
+// 	debugPrint("UART SEND:B\\r\\n   Baud rate increased to 115200.\r\n");
+// 	debugPrint("UART SEND:b\\r\\n   Baud rate reduction to 9600.\r\n");
+// 	debugPrint("UART SEND:R\\r\\n   The return rate increases to 10Hz.\r\n");
+//   debugPrint("UART SEND:r\\r\\n   The return rate reduction to 1Hz.\r\n");
+//   debugPrint("UART SEND:C\\r\\n   Basic return content: acceleration, angular velocity, angle, magnetic field.\r\n");
+//   debugPrint("UART SEND:c\\r\\n   Return content: acceleration.\r\n");
+//   debugPrint("UART SEND:h\\r\\n   help.\r\n");
+// 	debugPrint("******************************************************************************\r\n");
 // }
 
 // static void CmdProcess(void)
 // {
 // 	switch(s_cCmd)
 // 	{
-// 		case 'a':	if(WitStartAccCali() != WIT_HAL_OK) Serial.print("\r\nSet AccCali Error\r\n");
+// 		case 'a':	if(WitStartAccCali() != WIT_HAL_OK) debugPrint("\r\nSet AccCali Error\r\n");
 // 			break;
-// 		case 'm':	if(WitStartMagCali() != WIT_HAL_OK) Serial.print("\r\nSet MagCali Error\r\n");
+// 		case 'm':	if(WitStartMagCali() != WIT_HAL_OK) debugPrint("\r\nSet MagCali Error\r\n");
 // 			break;
-// 		case 'e':	if(WitStopMagCali() != WIT_HAL_OK) Serial.print("\r\nSet MagCali Error\r\n");
+// 		case 'e':	if(WitStopMagCali() != WIT_HAL_OK) debugPrint("\r\nSet MagCali Error\r\n");
 // 			break;
-// 		case 'u':	if(WitSetBandwidth(BANDWIDTH_5HZ) != WIT_HAL_OK) Serial.print("\r\nSet Bandwidth Error\r\n");
+// 		case 'u':	if(WitSetBandwidth(BANDWIDTH_5HZ) != WIT_HAL_OK) debugPrint("\r\nSet Bandwidth Error\r\n");
 // 			break;
-// 		case 'U':	if(WitSetBandwidth(BANDWIDTH_256HZ) != WIT_HAL_OK) Serial.print("\r\nSet Bandwidth Error\r\n");
+// 		case 'U':	if(WitSetBandwidth(BANDWIDTH_256HZ) != WIT_HAL_OK) debugPrint("\r\nSet Bandwidth Error\r\n");
 // 			break;
-// 		case 'B':	if(WitSetUartBaud(WIT_BAUD_115200) != WIT_HAL_OK) Serial.print("\r\nSet Baud Error\r\n");
+// 		case 'B':	if(WitSetUartBaud(WIT_BAUD_115200) != WIT_HAL_OK) debugPrint("\r\nSet Baud Error\r\n");
 //               else 
 //               {
 //                 SerialWT61.begin(c_uiBaud[WIT_BAUD_115200]);
-//                 Serial.print(" 115200 Baud rate modified successfully\r\n");
+//                 debugPrint(" 115200 Baud rate modified successfully\r\n");
 //               }
 // 			break;
-// 		case 'b':	if(WitSetUartBaud(WIT_BAUD_9600) != WIT_HAL_OK) Serial.print("\r\nSet Baud Error\r\n");
+// 		case 'b':	if(WitSetUartBaud(WIT_BAUD_9600) != WIT_HAL_OK) debugPrint("\r\nSet Baud Error\r\n");
 //               else 
 //               {
 //                 SerialWT61.begin(c_uiBaud[WIT_BAUD_9600]); 
-//                 Serial.print(" 9600 Baud rate modified successfully\r\n");
+//                 debugPrint(" 9600 Baud rate modified successfully\r\n");
 //               }
 // 			break;
-// 		case 'r': if(WitSetOutputRate(RRATE_1HZ) != WIT_HAL_OK)  Serial.print("\r\nSet Baud Error\r\n");
-// 			        else Serial.print("\r\nSet Baud Success\r\n");
+// 		case 'r': if(WitSetOutputRate(RRATE_1HZ) != WIT_HAL_OK)  debugPrint("\r\nSet Baud Error\r\n");
+// 			        else debugPrint("\r\nSet Baud Success\r\n");
 // 			break;
-// 		case 'R':	if(WitSetOutputRate(RRATE_10HZ) != WIT_HAL_OK) Serial.print("\r\nSet Baud Error\r\n");
-//               else Serial.print("\r\nSet Baud Success\r\n");
+// 		case 'R':	if(WitSetOutputRate(RRATE_10HZ) != WIT_HAL_OK) debugPrint("\r\nSet Baud Error\r\n");
+//               else debugPrint("\r\nSet Baud Success\r\n");
 // 			break;
-//     case 'C': if(WitSetContent(RSW_ACC|RSW_GYRO|RSW_ANGLE|RSW_MAG) != WIT_HAL_OK) Serial.print("\r\nSet RSW Error\r\n");
+//     case 'C': if(WitSetContent(RSW_ACC|RSW_GYRO|RSW_ANGLE|RSW_MAG) != WIT_HAL_OK) debugPrint("\r\nSet RSW Error\r\n");
 //       break;
-//     case 'c': if(WitSetContent(RSW_ACC) != WIT_HAL_OK) Serial.print("\r\nSet RSW Error\r\n");
+//     case 'c': if(WitSetContent(RSW_ACC) != WIT_HAL_OK) debugPrint("\r\nSet RSW Error\r\n");
 //       break;
 // 		case 'h':	ShowHelp();
 // 			break;
@@ -215,8 +215,7 @@ static void Delayms(uint16_t ucMs)
 }
 static void SensorDataUpdata(uint32_t uiReg, uint32_t uiRegNum)
 {
-	int i;
-    for(i = 0; i < uiRegNum; i++)
+    for(uint32_t i = 0; i < uiRegNum; i++)
     {
         switch(uiReg)
         {
@@ -244,7 +243,7 @@ static void AutoScanSensor(void)
 {
 	int i, iRetry;
 	
-	for(i = 0; i < sizeof(c_uiBaud)/sizeof(c_uiBaud[0]); i++)
+	for(i = 0; i < static_cast<int>(sizeof(c_uiBaud)/sizeof(c_uiBaud[0])); i++)
 	{
 		SerialWT61.begin(c_uiBaud[i]);
     	SerialWT61.flush();
@@ -260,16 +259,16 @@ static void AutoScanSensor(void)
       }
 			if(s_cDataUpdate != 0)
 			{
-				Serial.print(c_uiBaud[i]);
-				Serial.print(" baud find sensor\r\n\r\n");
+				debugPrint(c_uiBaud[i]);
+				debugPrint(" baud find sensor\r\n\r\n");
 				//ShowHelp();
 				return ;
 			}
 			iRetry--;
 		}while(iRetry);		
 	}
-	Serial.print("can not find sensor\r\n");
-	Serial.print("please check your connection\r\n");
+	debugPrint("can not find sensor\r\n");
+	debugPrint("please check your connection\r\n");
 }
 
 
@@ -288,11 +287,11 @@ static void BeginSensor(void)
 	}
 	if(s_cDataUpdate != 0)
 	{
-		Serial.print(baudRate);
-		Serial.println(" baud find sensor WT61");
+		debugPrint(baudRate);
+		debugPrintln(" baud find sensor WT61");
 	}
 	else{
-		Serial.println("could not find WT61, try autoScan");
+		debugPrintln("could not find WT61, try autoScan");
 		AutoScanSensor();
 	}
 }
