@@ -36,8 +36,8 @@ void calcSteeringPID(void)
   if (steerConfig.MotorDriveDirection)
     pwmDrive *= -1;
 
-  if (steerConfig.IsDanfoss)
-  {
+  // if (steerConfig.IsDanfoss)
+  // {
     // // Danfoss: PWM 25% On = Left Position max  (below Valve=Center)
     // // Danfoss: PWM 50% On = Center Position
     // // Danfoss: PWM 75% On = Right Position max (above Valve=Center)
@@ -56,7 +56,7 @@ void calcSteeringPID(void)
     // // (0.185/12)*255=3.93
     // // output now lies in the range [67 ... 205], the center position is now 136
     // // pwmDrive = (map(pwmDrive, 4, 235, 0, 255));
-  }
+  //}
 }
 
 // #########################################################################################
@@ -77,40 +77,40 @@ void motorDrive(void)
   else SteerKeya(angleSetPointMapped); // used for bench demoing
   */
 
-  if (steerConfig.CytronDriver)
-  {
-    // Cytron MD30C Driver Dir + PWM Signal
-    if (pwmDrive >= 0)
-    {
-      bitSet(PORTD, 4); // set the correct direction
-    }
-    else
-    {
-      bitClear(PORTD, 4);
-      pwmDrive = -1 * pwmDrive;
-    }
+  // if (steerConfig.CytronDriver)
+  // {
+  //   // Cytron MD30C Driver Dir + PWM Signal
+  //   if (pwmDrive >= 0)
+  //   {
+  //     bitSet(PORTD, 4); // set the correct direction
+  //   }
+  //   else
+  //   {
+  //     bitClear(PORTD, 4);
+  //     pwmDrive = -1 * pwmDrive;
+  //   }
 
-    // write out the 0 to 255 value
-    analogWrite(PWM1_LPWM, pwmDrive);
-    pwmDisplay = pwmDrive;
-  }
-  else
-  {
-    // IBT 2 Driver Dir1 connected to BOTH enables
-    // PWM Left + PWM Right Signal
+  //   // write out the 0 to 255 value
+  //   analogWrite(PWM1_LPWM, pwmDrive);
+  //   pwmDisplay = pwmDrive;
+  // }
+  // else
+  // {
+  //   // IBT 2 Driver Dir1 connected to BOTH enables
+  //   // PWM Left + PWM Right Signal
 
-    if (pwmDrive > 0)
-    {
-      analogWrite(PWM2_RPWM, 0); // Turn off before other one on
-      analogWrite(PWM1_LPWM, pwmDrive);
-    }
-    else
-    {
-      pwmDrive = -1 * pwmDrive;
-      analogWrite(PWM1_LPWM, 0); // Turn off before other one on
-      analogWrite(PWM2_RPWM, pwmDrive);
-    }
+  //   if (pwmDrive > 0)
+  //   {
+  //     analogWrite(PWM2_RPWM, 0); // Turn off before other one on
+  //     analogWrite(PWM1_LPWM, pwmDrive);
+  //   }
+  //   else
+  //   {
+  //     pwmDrive = -1 * pwmDrive;
+  //     analogWrite(PWM1_LPWM, 0); // Turn off before other one on
+  //     analogWrite(PWM2_RPWM, pwmDrive);
+  //   }
 
-    pwmDisplay = pwmDrive;
-  }
+  //   pwmDisplay = pwmDrive;
+  // }
 }

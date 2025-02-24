@@ -64,27 +64,35 @@ void passthroughSerial(){
 void LedSetup(){
   pinMode(GGAReceivedLED, OUTPUT);
   pinMode(DEBUG_LED, OUTPUT);
+  #ifdef PCB_VERSION_0_1
   pinMode(AUTOSTEER_ACTIVE_LED, OUTPUT);
+  #endif
   pinMode(CAN_ACTIVE_LED, OUTPUT);
 
   digitalWrite(GGAReceivedLED, 1);
   delay(300);
   digitalWrite(GGAReceivedLED, 0);
   delay(300);
+  #ifdef PCB_VERSION_0_1
   digitalWrite(AUTOSTEER_ACTIVE_LED, 1);
   delay(300);
   digitalWrite(AUTOSTEER_ACTIVE_LED, 0);
   delay(300);
+  #endif
   digitalWrite(CAN_ACTIVE_LED, 1);
   delay(300);
   digitalWrite(CAN_ACTIVE_LED, 0);
   delay(300);
   digitalWrite(GGAReceivedLED, 1);
+  #ifdef PCB_VERSION_0_1
   digitalWrite(AUTOSTEER_ACTIVE_LED, 1);
+  #endif
   digitalWrite(CAN_ACTIVE_LED, 1);
   delay(800);
   digitalWrite(GGAReceivedLED, 0);
+  #ifdef PCB_VERSION_0_1
   digitalWrite(AUTOSTEER_ACTIVE_LED, 0);
+  #endif
   digitalWrite(CAN_ACTIVE_LED, 0);
 }
 

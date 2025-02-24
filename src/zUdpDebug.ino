@@ -56,7 +56,12 @@ void udpDebugReceive()
         else if (key == "secondsVarBuf") settings.secondsVarianceBuffer = valueStr.toFloat();
         else if (key == "KalmanR") settings.kalmanR = valueStr.toFloat();
         else if (key == "KalmanQ") settings.kalmanQ = valueStr.toFloat();
-        EEPROM.put(150, settings);
+        if (steerConfig.CytronDriver){   //default tractor
+          EEPROM.put(200, settings);
+        }
+        else {
+          EEPROM.put(250, settings);
+        }
     }
   }
     // Check time-based send

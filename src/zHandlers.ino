@@ -74,7 +74,7 @@ void GGA_Handler() // Rec'd GGA
 
   if (strstr(insStatus, "INS_SOLUTION")!=NULL) // led always on if INS is aligned
   {
-    digitalWrite(GGAReceivedLED, LOW);
+    digitalWrite(GGAReceivedLED, HIGH);
   }
   else if (blink)
   {

@@ -18,6 +18,9 @@
 #endif // ARDUINO_TEENSY41
 
 /************************* User Settings *************************/
+//#define PCB_VERSION_0_1  // PCB version 0.1
+#define PCB_VERSION_1_0  // PCB version 1.0
+
 bool udpPassthrough = false;  // False = GPS neeeds to send GGA, VTG & HPR messages. True = GPS needs to send KSXT messages only.
 bool makeOGI = true;          // Set to true to make PAOGI messages. Else PANDA message will be made.
 const bool invertRoll = true; // Invert Roll in BNO
@@ -35,15 +38,40 @@ struct Config {
 
 Config settings;
 
+#ifdef PCB_VERSION_0_1
 // Serial Ports
-//#define Serial Serial              // AgIO USB conection
-#define SerialRTK Serial1             // RTK radio
+#define SerialRTK Serial2             // RTK radio
 #define SerialWT61 Serial3            // IMU
 #define SerialGPS2 Serial4            // Main postion receiver (INS)
 #define SerialGPS Serial7           // Main postion receiver (GGA, VTG)
 #define SerialDebug Serial8         // Debug TX only
 
-//HardwareSerial *SerialGPS = &Serial7; // Main postion receiver (GGA, VTG)
+// Status LED's   
+#define GGAReceivedLED 12        // blink if GGA received, ON if INS OK, OFF no GGA     blue
+#define DEBUG_LED 13             // ON if debugState > SETUP                          red on board
+#define AUTOSTEER_ACTIVE_LED 10  // blink if hello from AOG, ON if steering,          red
+#define CAN_ACTIVE_LED 9         // ON if keya heartbeat,                             yellow
+#define DEBUG_PIN 37             //button
+
+#endif
+
+
+#ifdef PCB_VERSION_1_0
+// Serial Ports
+#define SerialRTK Serial2             // RTK radio
+#define SerialWT61 Serial1            // IMU
+#define SerialGPS2 Serial4            // Main postion receiver (INS)
+#define SerialGPS Serial3           // Main postion receiver (GGA, VTG)
+#define SerialDebug Serial8         // Debug TX only
+
+// Status LED's   
+#define GGAReceivedLED 38        // blink if GGA received, ON if INS OK, OFF no GGA     red
+#define DEBUG_LED 13             // ON if debugState > SETUP                          red on board
+#define CAN_ACTIVE_LED 37        // ON if keya heartbeat, blink if hello from AOG but no keya      yellow
+#define DEBUG_PIN 3             //button
+
+#endif
+
 const int32_t baudAOG = 115200;       // USB connection speed
 const int32_t baudGPS = 460800;       // UM982 connection speed
 const int32_t baudRTK = 9600;         // most are using Xbee radios with default of 115200
@@ -74,13 +102,6 @@ bool keyaDetected = false;
 
 #define REPORT_INTERVAL 20  // BNO report time, we want to keep reading it quick & offen. Its not timmed to anything just give constant data.
 uint32_t READ_BNO_TIME = 0; // Used stop BNO data pile up (This version is without resetting BNO everytime)
-
-// Status LED's   
-#define GGAReceivedLED 12        // blink if GGA received, ON if RTK, OFF no GGA,     blue
-#define DEBUG_LED 13             // ON if debugState > SETUP                          red on board
-#define AUTOSTEER_ACTIVE_LED 10  // blink if hello from AOG, ON if steering,          red
-#define CAN_ACTIVE_LED 9         // ON if keya heartbeat,                             yellow
-#define DEBUG_PIN 37             //button
 
 uint8_t debug_pin = DEBUG_PIN;
 
@@ -225,7 +246,6 @@ struct CalibrationData {
 
 CalibrationData calibrationData;
 
-
 // Setup procedure ---------------------------------------------------------------------------------------------------------------
 void setup()
 {
@@ -365,7 +385,15 @@ void loop()
     autosteerLoop();
   else{
     ReceiveUdp();
+
+    #ifdef PCB_VERSION_0_1
     digitalWrite(AUTOSTEER_ACTIVE_LED, 0);
+    #endif
+
+    #ifdef PCB_VERSION_1_0
+    if(!keyaDetected)
+      digitalWrite(CAN_ACTIVE_LED, 0);
+    #endif
   }
 
   debugLoop();

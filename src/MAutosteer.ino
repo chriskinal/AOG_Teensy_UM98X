@@ -27,32 +27,39 @@ float KalmanWheelAngle   = 0.0;
      122hz = 1
      3921hz = 2
 */
-#define PWM_Frequency 0
+//#define PWM_Frequency 0
 
 /////////////////////////////////////////////
 
 // if not in eeprom, overwrite
-#define EEP_Ident 2200
+#define EEP_Ident 1000
 
 //   ***********  Motor drive connections  **************888
 // Connect ground only for cytron, Connect Ground and +5v for IBT2
 
 // Dir1 for Cytron Dir, Both L and R enable for IBT2
-#define DIR1_RL_ENABLE 4
+// #define DIR1_RL_ENABLE 4
 
-// PWM1 for Cytron PWM, Left PWM for IBT2
-#define PWM1_LPWM 2
+// // PWM1 for Cytron PWM, Left PWM for IBT2
+// #define PWM1_LPWM 2
 
-// Not Connected for Cytron, Right PWM for IBT2
-#define PWM2_RPWM 3
+// // Not Connected for Cytron, Right PWM for IBT2
+// #define PWM2_RPWM 3
 
 //--------------------------- Switch Input Pins ------------------------
+#ifdef PCB_VERSION_0_1
 #define STEERSW_PIN 32
 #define WORKSW_PIN 34
+#endif
 
-// Define sensor pin for current or pressure sensor
-#define CURRENT_SENSOR_PIN A17
-#define PRESSURE_SENSOR_PIN A10
+#ifdef PCB_VERSION_1_0
+#define STEERSW_PIN 2
+#define WORKSW_PIN 4 // not used
+#endif
+
+// // Define sensor pin for current or pressure sensor
+// #define CURRENT_SENSOR_PIN A17
+// #define PRESSURE_SENSOR_PIN A10
 
 #include <Wire.h>
 #include <EEPROM.h>
@@ -185,10 +192,10 @@ Setup steerConfig; // 13 bytes
 
 void steerConfigInit()
 {
-  if (steerConfig.CytronDriver)
-  {
-    pinMode(PWM2_RPWM, OUTPUT);
-  }
+  // if (steerConfig.CytronDriver)
+  // {
+  //   pinMode(PWM2_RPWM, OUTPUT);
+  // }
 }
 
 void steerSettingsInit()
@@ -205,31 +212,32 @@ void autosteerSetup()
        122hz = 1
        3921hz = 2
   */
-  if (PWM_Frequency == 0)
-  {
-    analogWriteFrequency(PWM1_LPWM, 490);
-    analogWriteFrequency(PWM2_RPWM, 490);
-  }
-  else if (PWM_Frequency == 1)
-  {
-    analogWriteFrequency(PWM1_LPWM, 122);
-    analogWriteFrequency(PWM2_RPWM, 122);
-  }
-  else if (PWM_Frequency == 2)
-  {
-    analogWriteFrequency(PWM1_LPWM, 3921);
-    analogWriteFrequency(PWM2_RPWM, 3921);
-  }
+  // if (PWM_Frequency == 0)
+  // {
+  //   analogWriteFrequency(PWM1_LPWM, 490);
+  //   analogWriteFrequency(PWM2_RPWM, 490);
+  // }
+  // else if (PWM_Frequency == 1)
+  // {
+  //   analogWriteFrequency(PWM1_LPWM, 122);
+  //   analogWriteFrequency(PWM2_RPWM, 122);
+  // }
+  // else if (PWM_Frequency == 2)
+  // {
+  //   analogWriteFrequency(PWM1_LPWM, 3921);
+  //   analogWriteFrequency(PWM2_RPWM, 3921);
+  // }
 
   // keep pulled high and drag low to activate, noise free safe
   pinMode(WORKSW_PIN, INPUT_PULLUP);
   pinMode(STEERSW_PIN, INPUT_PULLUP);
   pinMode(DEBUG_PIN, INPUT_PULLUP);
-  pinMode(DIR1_RL_ENABLE, OUTPUT);
+  
+  // pinMode(DIR1_RL_ENABLE, OUTPUT);
 
-  // Disable digital inputs for analog input pins
-  pinMode(CURRENT_SENSOR_PIN, INPUT_DISABLE);
-  pinMode(PRESSURE_SENSOR_PIN, INPUT_DISABLE);
+  // // Disable digital inputs for analog input pins
+  // pinMode(CURRENT_SENSOR_PIN, INPUT_DISABLE);
+  // pinMode(PRESSURE_SENSOR_PIN, INPUT_DISABLE);
 
   // set up communication
   Wire.end();
@@ -259,8 +267,14 @@ void autosteerSetup()
     EEPROM.put(40, steerConfig);
     EEPROM.put(60, networkAddress);
     // EEPROM.put(70, analogWork);
-    EEPROM.put(100, calibrationData);
-    EEPROM.put(150, settings);
+    if (steerConfig.CytronDriver){   //default tractor
+      EEPROM.put(100, calibrationData);
+      EEPROM.put(200, settings);
+    }
+    else {
+      EEPROM.put(150, calibrationData);   //second tractor
+      EEPROM.put(250, settings);
+    }
   }
   else
   {
@@ -268,8 +282,14 @@ void autosteerSetup()
     EEPROM.get(40, steerConfig);
     EEPROM.get(60, networkAddress);
     // EEPROM.get(70, analogWork);
-    EEPROM.get(100, calibrationData);
-    EEPROM.get(150, settings);
+    if (steerConfig.CytronDriver){   //default tractor
+      EEPROM.get(100, calibrationData);
+      EEPROM.get(200, settings);
+    }
+    else{
+      EEPROM.get(150, calibrationData);   //second tractor
+      EEPROM.get(250, settings);
+    }
     printCalibrationData();
     printSettings();
 
@@ -417,13 +437,13 @@ void autosteerLoop()
         sensorReading =  KeyaCurrentRapportSmooth; // then use keya current data
         sensorReading = min(sensorReading, 255);
       }
-      else // otherwise continue using analog input on PCB
-      {
-        sensorSample = (float)analogRead(CURRENT_SENSOR_PIN);
-        sensorSample = (abs(775 - sensorSample)) * 0.5;
-        sensorReading = sensorReading * 0.7 + sensorSample * 0.3;
-        sensorReading = min(sensorReading, 255);
-      }
+      // else // otherwise continue using analog input on PCB
+      // {
+      //   sensorSample = (float)analogRead(CURRENT_SENSOR_PIN);
+      //   sensorSample = (abs(775 - sensorSample)) * 0.5;
+      //   sensorReading = sensorReading * 0.7 + sensorSample * 0.3;
+      //   sensorReading = min(sensorReading, 255);
+      // }
 
       if (sensorReading >= steerConfig.PulseCountMax)
       {
@@ -520,19 +540,19 @@ void autosteerLoop()
     if (watchdogTimer < WATCHDOG_THRESHOLD)
     {
       // Enable H Bridge for IBT2, hyd aux, etc for cytron
-      if (steerConfig.CytronDriver)
-      {
-        if (steerConfig.IsRelayActiveHigh)
-        {
-          digitalWrite(PWM2_RPWM, 0);
-        }
-        else
-        {
-          digitalWrite(PWM2_RPWM, 1);
-        }
-      }
-      else
-        digitalWrite(DIR1_RL_ENABLE, 1);
+      // if (steerConfig.CytronDriver)
+      // {
+      //   if (steerConfig.IsRelayActiveHigh)
+      //   {
+      //     digitalWrite(PWM2_RPWM, 0);
+      //   }
+      //   else
+      //   {
+      //     digitalWrite(PWM2_RPWM, 1);
+      //   }
+      // }
+      // else
+      //   digitalWrite(DIR1_RL_ENABLE, 1);
 
       steerAngleError = steerAngleActual - steerAngleSetPoint; // calculate the steering error
       //steerAngleError = KalmanWheelAngle - steerAngleSetPoint; // calculate the steering error
@@ -543,30 +563,39 @@ void autosteerLoop()
         pwmDrive = 0; // turn off steering motor
       motorDrive();      // out to motors the pwm value
 
+      #ifdef PCB_VERSION_0_1
       digitalWrite(AUTOSTEER_ACTIVE_LED, 1);
+      #endif
     }
     else
     {
       // we've lost the comm to AgOpenGPS, or just stop request
       // Disable H Bridge for IBT2, hyd aux, etc for cytron
-      if (steerConfig.CytronDriver)
-      {
-        if (steerConfig.IsRelayActiveHigh)
-        {
-          digitalWrite(PWM2_RPWM, 1);
-        }
-        else
-        {
-          digitalWrite(PWM2_RPWM, 0);
-        }
-      }
-      else
-        digitalWrite(DIR1_RL_ENABLE, 0); // IBT2
+      // if (steerConfig.CytronDriver)
+      // {
+      //   if (steerConfig.IsRelayActiveHigh)
+      //   {
+      //     digitalWrite(PWM2_RPWM, 1);
+      //   }
+      //   else
+      //   {
+      //     digitalWrite(PWM2_RPWM, 0);
+      //   }
+      // }
+      // else
+      //   digitalWrite(DIR1_RL_ENABLE, 0); // IBT2
 
       pwmDrive = 0; // turn off steering motor
       motorDrive(); // out to motors the pwm value
       // Autosteer Led goes back to RED when autosteering is stopped
+      #ifdef PCB_VERSION_0_1
       digitalWrite(AUTOSTEER_ACTIVE_LED, systick_millis_count % 512 > 256);
+      #endif
+
+      #ifdef PCB_VERSION_1_0
+      if(!keyaDetected)
+        digitalWrite(CAN_ACTIVE_LED, systick_millis_count % 512 > 256);
+      #endif
     }
   } // end of timed loop
 

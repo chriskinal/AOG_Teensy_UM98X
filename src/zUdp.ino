@@ -338,7 +338,12 @@ void ReceiveUdp()
         printCalibrationData();
         configureUM981();
 
-        EEPROM.put(100, calibrationData);
+        if (steerConfig.CytronDriver){   //default tractor
+          EEPROM.put(100, calibrationData);
+        }
+        else {
+          EEPROM.put(150, calibrationData);   //second tractor
+        }
       }
     } // end if 80 81 7F
   }
