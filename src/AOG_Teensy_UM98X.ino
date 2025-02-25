@@ -67,7 +67,7 @@ Config settings;
 // Status LED's   
 #define GGAReceivedLED 38        // blink if GGA received, ON if INS OK, OFF no GGA     red
 #define DEBUG_LED 13             // ON if debugState > SETUP                          red on board
-#define CAN_ACTIVE_LED 37        // ON if keya heartbeat, blink if hello from AOG but no keya      yellow
+#define CAN_ACTIVE_LED 37        // ON if keya heartbeat, blink if hello from AOG but no keya      green
 #define DEBUG_PIN 3             //button
 
 #endif
@@ -377,12 +377,14 @@ void loop()
     digitalWrite(GGAReceivedLED, LOW);
 
   if(systick_millis_count - KeyaBeatTime > 5000){
-    digitalWrite(CAN_ACTIVE_LED, LOW);
+    if(!Autosteer_running)
+      digitalWrite(CAN_ACTIVE_LED, LOW);
     keyaDetected = false;
   }
 
-  if (Autosteer_running)
+  if (Autosteer_running){
     autosteerLoop();
+  }
   else{
     ReceiveUdp();
 
