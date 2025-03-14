@@ -290,8 +290,8 @@ void autosteerSetup()
       EEPROM.get(150, calibrationData);   //second tractor
       EEPROM.get(250, settings);
     }
-    printCalibrationData();
-    printSettings();
+    //printCalibrationData();
+    //printSettings();
 
     // to be removed??
     if (isnan(settings.kalmanR)) {

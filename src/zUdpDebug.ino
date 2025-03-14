@@ -78,7 +78,7 @@ void sendBuffer() {
     return;
   }
   
-  if (currentPos > 0 && systick_millis_count>6000) {
+  if (currentPos > 0 && systick_millis_count>10000) {
     Eth_udpDebug.beginPacket(Eth_ipDestination, portDebugOUT);
     Eth_udpDebug.write(buffer, currentPos);
     Eth_udpDebug.endPacket();

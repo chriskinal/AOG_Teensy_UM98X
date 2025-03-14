@@ -119,6 +119,7 @@ void configureUM981(){
         SerialGPS.write("CONFIG INS ALIGNMENTVEL 1.2\r\n");  // 1 m/s
         delay(100);
 
+        // debugPrintln("Setting PPP");
         // SerialGPS.write("CONFIG PPP ENABLE AUTO\r\n");  //E6-HAS
         // delay(100);
 
