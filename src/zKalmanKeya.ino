@@ -29,6 +29,8 @@ void angleStimeUpdate(){
   if(heading_rate<-300)
     heading_rate+=360;
   insWheelAngle = atan(heading_rate/RAD_TO_DEG*calibrationData.wheelBase/speed) * RAD_TO_DEG * workingDir;
+  if(!(insWheelAngle<50 && insWheelAngle>-50))
+    insWheelAngle=0;
   //dualWheelAngleWT61 = atan(headingRateWT/RAD_TO_DEG*calibrationData.wheelBase/speed*-1) * RAD_TO_DEG * workingDir;
 
   //update kalman measure variance R

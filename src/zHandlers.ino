@@ -40,8 +40,9 @@ char solQuality[2];
 // If odd characters showed up.
 void errorHandler()
 {
-  if(debugState == GPS || send_GPS)
-    debugPrintln("parser error");
+  //if(debugState == GPS || send_GPS)
+    //debugPrintln("parser error");
+    return;
 }
 
 void GGA_Handler() // Rec'd GGA

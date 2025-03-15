@@ -48,6 +48,8 @@ void udpDebugReceive()
             calibrationData.configFlag += 0.01;
             if (calibrationData.configFlag>2)
               calibrationData.configFlag -= 2;
+            if (isnan(calibrationData.configFlag))
+              calibrationData.configFlag = 0;
             configureUM981();
           }
         }

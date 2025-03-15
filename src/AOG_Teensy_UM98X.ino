@@ -18,8 +18,8 @@
 #endif // ARDUINO_TEENSY41
 
 /************************* User Settings *************************/
-//#define PCB_VERSION_0_1  // PCB version 0.1
-#define PCB_VERSION_1_0  // PCB version 1.0
+#define PCB_VERSION_0_1  // PCB version 0.1
+//#define PCB_VERSION_1_0  // PCB version 1.0
 
 bool udpPassthrough = false;  // False = GPS neeeds to send GGA, VTG & HPR messages. True = GPS needs to send KSXT messages only.
 bool makeOGI = true;          // Set to true to make PAOGI messages. Else PANDA message will be made.
@@ -229,6 +229,8 @@ bool send_INFO = false;
 
 int8_t debugButton = 1;
 uint32_t debugTime = 0;
+unsigned long lastPlotTime = 0;
+const unsigned long plotInterval = 100;  // ms
 
 struct CalibrationData {
   float wheelBase = 2.4;
@@ -396,6 +398,12 @@ void loop()
     if(!keyaDetected)
       digitalWrite(CAN_ACTIVE_LED, 0);
     #endif
+  }
+
+   // Send plot data every 100ms
+  if (millis() - lastPlotTime >= plotInterval && send_WAS) {
+    sendPlotData();
+    lastPlotTime = millis();
   }
 
   debugLoop();

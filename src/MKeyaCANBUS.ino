@@ -73,7 +73,7 @@ bool isPatternMatch(const CAN_message_t &message, const uint8_t *pattern, size_t
 
 void printIdAndReply(uint32_t id, uint8_t buf[8])
 {
-  if(debugState || send_KEYA){
+  if(debugState==KEYA || send_KEYA){
     debugPrint(systick_millis_count);
     debugPrint(" -> ");
     debugPrint(id, HEX);

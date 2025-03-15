@@ -9,9 +9,6 @@
 "Barrowed" Keya code from Matt Elias @ https://github.com/m-elias/AgOpenGPS_Boards/tree/575R-Keya/TeensyModules/V4.1"
 */
 
-unsigned long lastPlotTime = 0;
-const unsigned long plotInterval = 100;  // ms
-
 uint8_t keyaEncoderQuery[] = {0x40, 0x04, 0x21, 0x01};
 uint8_t keyaEncoderSpeedQuery[] = {0x40, 0x03, 0x21, 0x01};
 
@@ -246,12 +243,12 @@ void autosteerSetup()
   // Check ADC
   if (adc.testConnection())
   {
-    debugPrintln("ADC Connecton OK");
+    debugPrintln("ADC Connection OK");
     useADS=true;  //true
   }
   else
   {
-    debugPrintln("ADC Connecton FAILED!");
+    debugPrintln("ADC Connection FAILED!");
     useADS = false;
   }
 
@@ -293,6 +290,9 @@ void autosteerSetup()
     //printCalibrationData();
     //printSettings();
 
+    if (isnan(calibrationData.configFlag))
+      calibrationData.configFlag = 0;
+
     // to be removed??
     if (isnan(settings.kalmanR)) {
         settings = {
@@ -327,12 +327,6 @@ void autosteerLoop()
 #ifdef ARDUINO_TEENSY41
   ReceiveUdp();
 #endif
-
-  // Send plot data every 100ms
-  if (millis() - lastPlotTime >= plotInterval || send_WAS) {
-    sendPlotData();
-    lastPlotTime = millis();
-  }
 
   // Loop triggers every 25 msec and sends back gyro heading, and roll, steer angle etc
   currentTime = systick_millis_count;
