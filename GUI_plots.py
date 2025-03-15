@@ -258,13 +258,17 @@ class RealTimePlot(QtWidgets.QWidget):
     @QtCore.pyqtSlot(str)
     def handle_plot_data(self, data):
         values = data.split(',')
+        print(values)
         if len(values) == 6:
-            self.data['timestamps'].append(float(values[0]))
-            self.data['steerAngleSens'].append(float(values[1]))
-            self.data['insWheelAngle'].append(float(values[2]))
-            self.data['keyaEncoder'].append(float(values[3]))
-            self.data['KalmanWheelAngle'].append(float(values[4]))
-            self.data['angleVariance'] = float(values[5])
+            try:
+                self.data['timestamps'].append(float(values[0]))
+                self.data['steerAngleSens'].append(float(values[1]))
+                self.data['insWheelAngle'].append(float(values[2]))
+                self.data['keyaEncoder'].append(float(values[3]))
+                self.data['KalmanWheelAngle'].append(float(values[4]))
+                self.data['angleVariance'] = float(values[5])
+            except ValueError:
+                print("parsing failed")
 
     @QtCore.pyqtSlot(str)
     def handle_debug_data(self, message):
