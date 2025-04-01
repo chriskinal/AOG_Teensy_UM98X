@@ -1,4 +1,4 @@
-# AgOpenGPS Firmware for Teensy 4.1, UM981/UM982, and KeyaMotor
+# AgOpenGPS WAS-less Firmware for Teensy 4.1, UM981/UM982, and KeyaMotor
 
 ## Overview
 This firmware integrates the **UM981** for roll and pitch-corrected positioning with true orientation using a **single antenna**. It is designed for use with a **Teensy 4.1**, **UM981 or UM982**, and **KeyaMotor**. 
