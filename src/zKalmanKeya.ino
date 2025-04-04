@@ -1,11 +1,11 @@
 //KALMAN
-//float R   = 1;              // varianza del rumore sulla misura dell'angolo stimato
-//float Q   = 1e-04;          // varianza del disturbo sul processo
-float Pp  = 0.0;            // P(t|t-1) varianza dell'errore di predizione
+//float R   = 1;              // varianza del rumore sulla misura dell'angolo stimato - variance of the noise on the estimated angle measurement
+//float Q   = 1e-04;          // varianza del disturbo sul processo - variance of the disturbance on the process
+float Pp  = 0.0;            // P(t|t-1) varianza dell'errore di predizione - P(t|t-1) variance of the prediction error
 float K   = 0.0;            // Kalman gain
-float P   = 1.0;            // P(t|t) varianza dell'errore di filtraggio
-float Xp  = 0.0;            // x_^(t|t-1) predizione dello stato precedente
-float X   = 0.0;            // x_^(t|t) stato filtrato
+float P   = 1.0;            // P(t|t) varianza dell'errore di filtraggio - P(t|t) variance of the filtering error
+float Xp  = 0.0;            // x_^(t|t-1) predizione dello stato precedente - x_^(t|t-1) prediction of the previous state
+float X   = 0.0;            // x_^(t|t) stato filtrato - x_^(t|t) - been filtered
 
 float heading_rate = 0;
 float headingOld = 0;
@@ -74,11 +74,11 @@ void KalmanUpdate(){
 
   X = KalmanWheelAngle;
   // --- Kalman process ---
-  Pp = P + settings.kalmanQ;                       // (PREDICTION) predizione della varianza dell'errore al prossimo step
-  Xp = X + angleDiff;                                     // (PREDICTION) predizione dello stato al prossimo step
+  Pp = P + settings.kalmanQ;                       // (PREDICTION) predizione della varianza dell'errore al prossimo step - prediction of the error variance at the next step
+  Xp = X + angleDiff;                                     // (PREDICTION) predizione dello stato al prossimo step - prediction of the state at the next step
   K = Pp/(Pp + (settings.kalmanR*angleVariance));  // (CORRECTION) Kalman gain
-  P = (1-K)*Pp;                                           // (CORRECTION) aggiornamento della varianza dell'errore di filtraggio
-  X = Xp + K*(insWheelAngle-Xp);                          // (CORRECTION) stima di Kalman dell'output del sensore
+  P = (1-K)*Pp;                                           // (CORRECTION) aggiornamento della varianza dell'errore di filtraggio - filtering error variance update
+  X = Xp + K*(insWheelAngle-Xp);                          // (CORRECTION) stima di Kalman dell'output del sensore - Kalman estimate of the sensor output
 
   KalmanWheelAngle = X;
   steerAngleActualOld = keyaEncoder /  steerSettings.keyaSteerSensorCounts;
