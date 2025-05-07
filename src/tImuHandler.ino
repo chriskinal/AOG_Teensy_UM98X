@@ -11,7 +11,7 @@ char rollPanda[6];
 char pitchPanda[6];
 char yawRatePanda[6];
 
-//INS
+// INS
 char insHeading[14];
 char insRoll[14];
 char insPitch[14];
@@ -21,7 +21,8 @@ float rollDual = 0;
 char umHeading[8];
 char umRoll[8];
 
-void imuSetup(){
+void imuSetup()
+{
   uint8_t error;
   ImuWire.begin();
 
@@ -47,18 +48,18 @@ void imuSetup(){
         // Increase I2C data rate to 400kHz
         ImuWire.setClock(400000);
 
-        //bno08x.calibrateAll();
+        // bno08x.calibrateAll();
 
         delay(300);
 
         // Use gameRotationVector and set REPORT_INTERVAL
-        //bno08x.enableGameRotationVector(REPORT_INTERVAL);
+        // bno08x.enableGameRotationVector(REPORT_INTERVAL);
         bno08x.enableGyroIntegratedRotationVector(REPORT_INTERVAL);
         bno08x.enableAccelerometer(REPORT_INTERVAL);
         useBNO08x = true;
-        //bno08x.calibrateAccelerometer();
-        //bno08x.saveCalibration(); //Saves the current dynamic calibration data (DCD) to memory
-        //bno08x.requestCalibrationStatus(); //Sends command to get the latest calibration status
+        // bno08x.calibrateAccelerometer();
+        // bno08x.saveCalibration(); //Saves the current dynamic calibration data (DCD) to memory
+        // bno08x.requestCalibrationStatus(); //Sends command to get the latest calibration status
       }
       else
       {
@@ -125,9 +126,9 @@ void readBNO()
       imuRoll = atan2(t0, t1) * RAD_TO_DEG;
     }
 
-    gyroX = bno08x.getFastGyroX()* RAD_TO_DEG;
-    gyroY = bno08x.getFastGyroY()* RAD_TO_DEG;
-    gyroZ = bno08x.getFastGyroZ()* RAD_TO_DEG;
+    gyroX = bno08x.getFastGyroX() * RAD_TO_DEG;
+    gyroY = bno08x.getFastGyroY() * RAD_TO_DEG;
+    gyroZ = bno08x.getFastGyroZ() * RAD_TO_DEG;
 
     if (invertRoll)
     {
@@ -135,12 +136,9 @@ void readBNO()
       gyroX *= -1;
     }
 
-
-
-
-    //float x = bno08x.getAccelX();
-    //float y = bno08x.getAccelY();
-    //float z = bno08x.getAccelZ();
+    // float x = bno08x.getAccelX();
+    // float y = bno08x.getAccelY();
+    // float z = bno08x.getAccelZ();
 
     // debugPrint(x, 4);
     // debugPrint(",");
@@ -153,11 +151,11 @@ void readBNO()
     //         debugPrintln("Calibration data successfully stored");
     //         delay(1000);
     //       }
-    // else 
+    // else
     //   debugPrintln("not");
 
-    //debugPrint("imuRoll:");
-    //debugPrintln(imuRoll);
+    // debugPrint("imuRoll:");
+    // debugPrintln(imuRoll);
   }
 }
 
@@ -169,15 +167,15 @@ void imuHandler()
   {
     // BNO is reading in its own timer
     //  Fill rest of Panda Sentence - Heading
-    temp = (int16_t)(imuYaw*10);
+    temp = (int16_t)(imuYaw * 10);
     itoa(temp, headingPanda, 10);
 
     // the pitch x10
-    temp = (int16_t)(imuPitch*10);
+    temp = (int16_t)(imuPitch * 10);
     itoa(temp, pitchPanda, 10);
 
     // the roll x10
-    temp = (int16_t)(imuRoll*10);
+    temp = (int16_t)(imuRoll * 10);
     itoa(temp, rollPanda, 10);
 
     // YawRate - 0 for now
@@ -189,7 +187,7 @@ void imuHandler()
     {
       if (usingUM982)
       {
-        snprintf (rollPanda, sizeof(rollPanda), "%.3f", rollWT);
+        snprintf(rollPanda, sizeof(rollPanda), "%.3f", rollWT);
         strcpy(headingPanda, umHeading);
       }
       else

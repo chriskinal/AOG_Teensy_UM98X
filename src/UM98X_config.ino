@@ -1,5 +1,6 @@
 
-void checkUM981(){
+void checkUM981()
+{
   uint32_t baudrate = 0;
   for (uint32_t i = 0; i < nrBaudrates; i++)
   {
@@ -43,15 +44,16 @@ void checkUM981(){
   }
 }
 
-void configureUM981(){
+void configureUM981()
+{
   SerialGPS.write("CONFIG\r\n"); // Request the UM981 Configuration
   delay(200);
 
   while (SerialGPS.available() && !setUM981)
   {
     char incoming[300];
-    SerialGPS.readBytesUntil('\n',incoming, 300);
-    setUM981=false;
+    SerialGPS.readBytesUntil('\n', incoming, 300);
+    setUM981 = false;
 
     // Check the "UM981 configured" flag.
     if (strstr(incoming, "CONFIG ANTENNADELTAHEN") != NULL)
@@ -116,7 +118,7 @@ void configureUM981(){
         SerialGPS.println("\r\n");
         delay(100);
 
-        SerialGPS.write("CONFIG INS ALIGNMENTVEL 1.2\r\n");  // 1 m/s
+        SerialGPS.write("CONFIG INS ALIGNMENTVEL 1.2\r\n"); // 1 m/s
         delay(100);
 
         // debugPrintln("Setting PPP");
@@ -194,8 +196,8 @@ void configureUM981(){
   }
 }
 
-
-void checkUM982(){
+void checkUM982()
+{
   uint32_t baudrate = 0;
   for (uint32_t i = 0; i < nrBaudrates; i++)
   {
@@ -239,15 +241,16 @@ void checkUM982(){
   }
 }
 
-void configureUM982(){
+void configureUM982()
+{
   SerialGPS.write("CONFIG\r\n"); // Request the UM982 Configuration
   delay(200);
 
   while (SerialGPS.available() && !setUM982)
   {
     char incoming[300];
-    SerialGPS.readBytesUntil('\n',incoming, 300);
-    setUM982=false;
+    SerialGPS.readBytesUntil('\n', incoming, 300);
+    setUM982 = false;
 
     // Check the "UM982 configured" flag.
     if (strstr(incoming, "CONFIG ANTENNADELTAHEN") != NULL)
@@ -281,7 +284,7 @@ void configureUM982(){
         SerialGPS.write("MODE ROVER SURVEY\r\n");
         delay(100);
 
-        SerialGPS.write("CONFIG PPP ENABLE AUTO\r\n");  //E6-HAS PARSING FAILD GRAMMAR ERROR
+        SerialGPS.write("CONFIG PPP ENABLE AUTO\r\n"); // E6-HAS PARSING FAILD GRAMMAR ERROR
         delay(100);
 
         SerialGPS.write("CONFIG PPP DATUM WGS84\r\n");
@@ -290,7 +293,7 @@ void configureUM982(){
         SerialGPS.write("CONFIG PPP CONVERGE 50 50\r\n");
         delay(100);
 
-        SerialGPS.write("CONFIG SIGNALGROUP 8\r\n");    // PARSING FAILD GRAMMAR ERROR
+        SerialGPS.write("CONFIG SIGNALGROUP 8\r\n"); // PARSING FAILD GRAMMAR ERROR
         delay(100);
 
         // Set rtk height smoothing
@@ -300,7 +303,7 @@ void configureUM982(){
 
         // Set heading offset
         debugPrintln("Setting heading offset 270");
-        SerialGPS.write("CONFIG HEADING OFFSET -90\r\n"); //dx is main antenna
+        SerialGPS.write("CONFIG HEADING OFFSET -90\r\n"); // dx is main antenna
         delay(100);
 
         // Set heading smoothing

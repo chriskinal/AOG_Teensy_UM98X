@@ -6,7 +6,7 @@ void ReceiveUdp()
   // When ethernet is not running, return directly. parsePacket() will block when we don't
   if (!Ethernet_running)
   {
-    if(debugState == UDP)
+    if (debugState == UDP)
       debugPrintln("Ethernet not running");
     return;
   }
@@ -24,9 +24,10 @@ void ReceiveUdp()
   {
     Eth_udpAutoSteer.read(autoSteerUdpData, 100);
 
-    if(debugState == UDP){
+    if (debugState == UDP)
+    {
       debugPrint("ReceivedPacket: ");
-      for(int l=0; l<len; l++)
+      for (int l = 0; l < len; l++)
         debugPrint(autoSteerUdpData[l]);
       debugPrintln();
     }
@@ -35,7 +36,7 @@ void ReceiveUdp()
     {
       if (autoSteerUdpData[3] == 0xFE && Autosteer_running) // 254
       {
-        gpsSpeed = ((float)(autoSteerUdpData[5] | autoSteerUdpData[6] << 8)) * 0.1;  //is negative when in reverse? No!
+        gpsSpeed = ((float)(autoSteerUdpData[5] | autoSteerUdpData[6] << 8)) * 0.1; // is negative when in reverse? No!
         gpsSpeedUpdateTimer = 0;
 
         prevGuidanceStatus = guidanceStatus;
@@ -57,8 +58,8 @@ void ReceiveUdp()
 
         // Bit 10 Tram
         tram = autoSteerUdpData[10];
-        if(tram!=255)
-          XTE = XTE*0.98 + abs(tram-127)*2*0.02; //cm
+        if (tram != 255)
+          XTE = XTE * 0.98 + abs(tram - 127) * 2 * 0.02; // cm
 
         // Bit 11
         relay = autoSteerUdpData[11];
@@ -137,7 +138,8 @@ void ReceiveUdp()
         float temp = (float)steerSettings.minPWM * 1.2;
         steerSettings.lowPWM = (byte)temp;
 
-        if (steerConfig.IsDanfoss){
+        if (steerConfig.IsDanfoss)
+        {
           steerSettings.keyaSteerSensorCounts = autoSteerUdpData[9]; // sent as setting displayed in AOG
 
           int16_t temp = 0;
@@ -152,7 +154,8 @@ void ReceiveUdp()
           debugPrint("Setting for Keya!\ndirOffset: ");
           debugPrintln(steerSettings.keyaDirOffset);
         }
-        else {
+        else
+        {
           steerSettings.steerSensorCounts = autoSteerUdpData[9]; // sent as setting displayed in AOG
 
           steerSettings.wasOffset = (autoSteerUdpData[10]); // read was zero offset Lo
@@ -241,10 +244,10 @@ void ReceiveUdp()
         // Re-Init
         steerConfigInit();
 
-      }                                    // end FB
+      } // end FB
       else if (autoSteerUdpData[3] == 200) // Hello from AgIO
       {
-        Autosteer_running=true;
+        Autosteer_running = true;
         int16_t sa = (int16_t)(steerAngleActual * 100);
 
         helloFromAutoSteer[5] = (uint8_t)sa;
@@ -320,29 +323,30 @@ void ReceiveUdp()
       {
         debugPrintln("0x69 - calibration config");
 
-        sscanf(reinterpret_cast<const char*>(&autoSteerUdpData[4]), "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", 
-          &calibrationData.wheelBase, 
-          &calibrationData.IMUtoANTx, 
-          &calibrationData.IMUtoANTy, 
-          &calibrationData.IMUtoANTz, 
-          &calibrationData.INSx, 
-          &calibrationData.INSy, 
-          &calibrationData.INSz, 
-          &calibrationData.INSanglex, 
-          &calibrationData.INSangley, 
-          &calibrationData.INSanglez
-        );
+        sscanf(reinterpret_cast<const char *>(&autoSteerUdpData[4]), "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f",
+               &calibrationData.wheelBase,
+               &calibrationData.IMUtoANTx,
+               &calibrationData.IMUtoANTy,
+               &calibrationData.IMUtoANTz,
+               &calibrationData.INSx,
+               &calibrationData.INSy,
+               &calibrationData.INSz,
+               &calibrationData.INSanglex,
+               &calibrationData.INSangley,
+               &calibrationData.INSanglez);
         calibrationData.configFlag += 0.01;
-        if (calibrationData.configFlag>2)
-        calibrationData.configFlag -= 2;
+        if (calibrationData.configFlag > 2)
+          calibrationData.configFlag -= 2;
         printCalibrationData();
         configureUM981();
 
-        if (steerConfig.CytronDriver){   //default tractor
+        if (steerConfig.CytronDriver)
+        { // default tractor
           EEPROM.put(100, calibrationData);
         }
-        else {
-          EEPROM.put(150, calibrationData);   //second tractor
+        else
+        {
+          EEPROM.put(150, calibrationData); // second tractor
         }
       }
     } // end if 80 81 7F
@@ -358,7 +362,6 @@ void SendUdp(uint8_t *data, uint8_t datalen, IPAddress dip, uint16_t dport)
   Eth_udpAutoSteer.endPacket();
 }
 #endif
-
 
 void udpNtrip()
 {

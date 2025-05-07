@@ -1,5 +1,6 @@
 
-void passthroughSerial(){
+void passthroughSerial()
+{
   char incoming = SerialGPS.read();
   // debugPrintln(incoming);
   switch (incoming)
@@ -61,52 +62,56 @@ void passthroughSerial(){
   }
 }
 
-void LedSetup(){
+void LedSetup()
+{
   pinMode(GGAReceivedLED, OUTPUT);
   pinMode(DEBUG_LED, OUTPUT);
-  #ifdef PCB_VERSION_0_1
+#ifdef PCB_VERSION_0_1
   pinMode(AUTOSTEER_ACTIVE_LED, OUTPUT);
-  #endif
+#endif
   pinMode(CAN_ACTIVE_LED, OUTPUT);
 
   digitalWrite(GGAReceivedLED, 1);
   delay(300);
   digitalWrite(GGAReceivedLED, 0);
   delay(300);
-  #ifdef PCB_VERSION_0_1
+#ifdef PCB_VERSION_0_1
   digitalWrite(AUTOSTEER_ACTIVE_LED, 1);
   delay(300);
   digitalWrite(AUTOSTEER_ACTIVE_LED, 0);
   delay(300);
-  #endif
+#endif
   digitalWrite(CAN_ACTIVE_LED, 1);
   delay(300);
   digitalWrite(CAN_ACTIVE_LED, 0);
   delay(300);
   digitalWrite(GGAReceivedLED, 1);
-  #ifdef PCB_VERSION_0_1
+#ifdef PCB_VERSION_0_1
   digitalWrite(AUTOSTEER_ACTIVE_LED, 1);
-  #endif
+#endif
   digitalWrite(CAN_ACTIVE_LED, 1);
   delay(800);
   digitalWrite(GGAReceivedLED, 0);
-  #ifdef PCB_VERSION_0_1
+#ifdef PCB_VERSION_0_1
   digitalWrite(AUTOSTEER_ACTIVE_LED, 0);
-  #endif
+#endif
   digitalWrite(CAN_ACTIVE_LED, 0);
 }
 
-void debugLoop(){
-  int8_t read=digitalRead(debug_pin);
-  //debug button handler
-  if(read == LOW && debugButton == 1){  //just pressed
-    if(debugState == STATE_INFO)
+void debugLoop()
+{
+  int8_t read = digitalRead(debug_pin);
+  // debug button handler
+  if (read == LOW && debugButton == 1)
+  { // just pressed
+    if (debugState == STATE_INFO)
       debugState = SETUP;
     else
       debugState = (debugState + 1);
 
     debugPrintln("\n\n");
-    switch(debugState){
+    switch (debugState)
+    {
     case SETUP:
       debugPrintln("DEBUG: SETUP");
       break;
@@ -133,24 +138,26 @@ void debugLoop(){
       break;
     case STATE_INFO:
       debugPrintln("DEBUG: STATE_INFO");
-      debugTime = systick_millis_count- 5000;
+      debugTime = systick_millis_count - 5000;
       break;
     }
     debugPrintln("\n");
 
-    if(debugState == SETUP)
+    if (debugState == SETUP)
       digitalWrite(DEBUG_LED, LOW);
     else
       digitalWrite(DEBUG_LED, HIGH);
 
     delay(200);
   }
-  debugButton=read;
+  debugButton = read;
 
-  if((debugState == STATE_INFO || send_INFO) && systick_millis_count - debugTime > 5000){
+  if ((debugState == STATE_INFO || send_INFO) && systick_millis_count - debugTime > 5000)
+  {
     getKeyaInfo();
     debugPrintln();
-    if(settings.usingWT61){
+    if (settings.usingWT61)
+    {
       debugPrint("WT61 temperature: ");
       debugPrint(tempWT);
       debugPrintln(" °C");
@@ -165,36 +172,58 @@ void debugLoop(){
   }
 }
 
-void printCalibrationData() {
+void printCalibrationData()
+{
   debugPrintln("Current Calibration Data:");
-  debugPrint("WheelBase: "); debugPrintln(calibrationData.wheelBase);
-  debugPrint("IMUtoANTx: "); debugPrintln(calibrationData.IMUtoANTx);
-  debugPrint("IMUtoANTy: "); debugPrintln(calibrationData.IMUtoANTy);
-  debugPrint("IMUtoANTz: "); debugPrintln(calibrationData.IMUtoANTz);
-  debugPrint("INSx: "); debugPrintln(calibrationData.INSx);
-  debugPrint("INSy: "); debugPrintln(calibrationData.INSy);
-  debugPrint("INSz: "); debugPrintln(calibrationData.INSz);
-  debugPrint("INSanglex: "); debugPrintln(calibrationData.INSanglex);
-  debugPrint("INSangley: "); debugPrintln(calibrationData.INSangley);
-  debugPrint("INSanglez: "); debugPrintln(calibrationData.INSanglez);
-  debugPrint("configFlag: "); debugPrintln(calibrationData.configFlag);
+  debugPrint("WheelBase: ");
+  debugPrintln(calibrationData.wheelBase);
+  debugPrint("IMUtoANTx: ");
+  debugPrintln(calibrationData.IMUtoANTx);
+  debugPrint("IMUtoANTy: ");
+  debugPrintln(calibrationData.IMUtoANTy);
+  debugPrint("IMUtoANTz: ");
+  debugPrintln(calibrationData.IMUtoANTz);
+  debugPrint("INSx: ");
+  debugPrintln(calibrationData.INSx);
+  debugPrint("INSy: ");
+  debugPrintln(calibrationData.INSy);
+  debugPrint("INSz: ");
+  debugPrintln(calibrationData.INSz);
+  debugPrint("INSanglex: ");
+  debugPrintln(calibrationData.INSanglex);
+  debugPrint("INSangley: ");
+  debugPrintln(calibrationData.INSangley);
+  debugPrint("INSanglez: ");
+  debugPrintln(calibrationData.INSanglez);
+  debugPrint("configFlag: ");
+  debugPrintln(calibrationData.configFlag);
   debugPrintln("-----------------------------");
 }
 
-void printSettings() {
+void printSettings()
+{
   debugPrintln("Current Settings:");
-  debugPrint("usingWT61: "); debugPrintln(settings.usingWT61);
-  debugPrint("using2serialGPS: "); debugPrintln(settings.using2serialGPS);
-  debugPrint("useKalmanForSensor: "); debugPrintln(settings.useKalmanForSensor);
-  debugPrint("intervalINS: "); debugPrintln(settings.intervalINS);
-  debugPrint("secondsVarianceBuffer: "); debugPrintln(settings.secondsVarianceBuffer);
-  debugPrint("minSpeedKalman: "); debugPrintln(settings.minSpeedKalman);
-  debugPrint("kalmanR: "); debugPrintln(settings.kalmanR);
-  debugPrint("kalmanQ: "); debugPrintln(settings.kalmanQ, 6);
+  debugPrint("usingWT61: ");
+  debugPrintln(settings.usingWT61);
+  debugPrint("using2serialGPS: ");
+  debugPrintln(settings.using2serialGPS);
+  debugPrint("useKalmanForSensor: ");
+  debugPrintln(settings.useKalmanForSensor);
+  debugPrint("intervalINS: ");
+  debugPrintln(settings.intervalINS);
+  debugPrint("secondsVarianceBuffer: ");
+  debugPrintln(settings.secondsVarianceBuffer);
+  debugPrint("minSpeedKalman: ");
+  debugPrintln(settings.minSpeedKalman);
+  debugPrint("kalmanR: ");
+  debugPrintln(settings.kalmanR);
+  debugPrint("kalmanQ: ");
+  debugPrintln(settings.kalmanQ, 6);
   debugPrintln("-----------------------------");
 }
 
-void sendPlotData() {
+void sendPlotData()
+{
   // Create CSV string with timestamp
   String plotString = String(millis()) + ",";
   plotString += String(steerAngleSens, 3) + ",";

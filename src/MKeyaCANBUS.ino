@@ -40,8 +40,8 @@ uint64_t KeyaID = 0x06000001; // 0x01 is default ID
 bool lnNeeded = false;
 uint32_t hbTime;
 uint32_t keyaTime;
-uint32_t keyaCommandTime=0;
-uint8_t keyaCommandState=0;
+uint32_t keyaCommandTime = 0;
+uint8_t keyaCommandState = 0;
 bool keyaMotorStatus = false;
 int16_t actualSpeed = 0;
 
@@ -53,7 +53,6 @@ int32_t keyaEncoderFinalOld = 0;
 int32_t keyaEncoderDiff = 0;
 int8_t keyaDir = 0;
 uint8_t keyaState = 0; // 0 -> 4
-
 
 void CAN_Setup()
 {
@@ -73,7 +72,8 @@ bool isPatternMatch(const CAN_message_t &message, const uint8_t *pattern, size_t
 
 void printIdAndReply(uint32_t id, uint8_t buf[8])
 {
-  if(debugState==KEYA || send_KEYA){
+  if (debugState == KEYA || send_KEYA)
+  {
     debugPrint(systick_millis_count);
     debugPrint(" -> ");
     debugPrint(id, HEX);
@@ -106,20 +106,23 @@ void keyaCommand(uint8_t command[])
 
 void tryKeyaCommand()
 {
-  if(keyaDetected)
+  if (keyaDetected)
   {
-    uint8_t remain = (systick_millis_count - keyaCommandTime)%30;
-    if(remain < 10 && keyaCommandState==0){
+    uint8_t remain = (systick_millis_count - keyaCommandTime) % 30;
+    if (remain < 10 && keyaCommandState == 0)
+    {
       keyaCommand(keyaEncoderSpeedQuery);
       keyaCommandState++;
     }
-    else if(remain > 10 && keyaCommandState==1){
+    else if (remain > 10 && keyaCommandState == 1)
+    {
       keyaCommand(keyaCurrentQuery);
       keyaCommandState++;
     }
-    else if(remain > 20 && keyaCommandState==2){
+    else if (remain > 20 && keyaCommandState == 2)
+    {
       keyaCommand(keyaEncoderQuery);
-      keyaCommandState=0;
+      keyaCommandState = 0;
     }
   }
 }
@@ -129,7 +132,7 @@ void SteerKeya(int steerSpeed)
   if (steerSpeed == 0)
   {
     keyaCommand(keyaDisableCommand);
-    if (debugState == KEYA|| send_KEYA)
+    if (debugState == KEYA || send_KEYA)
       debugPrintln("steerSpeed zero - disabling");
     return; // don't need to go any further, if we're disabling, we're disabling
   }
@@ -137,9 +140,9 @@ void SteerKeya(int steerSpeed)
   if (keyaDetected)
   {
     actualSpeed = map(steerSpeed, -255, 255, -995, 995);
-    if (debugState == KEYA|| send_KEYA)
+    if (debugState == KEYA || send_KEYA)
       debugPrintln("told to steer, with " + String(steerSpeed) + " so....");
-    if (debugState == KEYA|| send_KEYA)
+    if (debugState == KEYA || send_KEYA)
       debugPrintln("I converted that to speed " + String(actualSpeed));
 
     CAN_message_t KeyaBusSendData;
@@ -153,7 +156,7 @@ void SteerKeya(int steerSpeed)
       KeyaBusSendData.buf[5] = lowByte(actualSpeed);
       KeyaBusSendData.buf[6] = 0xff;
       KeyaBusSendData.buf[7] = 0xff;
-      if (debugState == KEYA|| send_KEYA)
+      if (debugState == KEYA || send_KEYA)
         debugPrintln("pwmDrive < zero - clockwise - steerSpeed " + String(steerSpeed));
     }
     else
@@ -162,7 +165,7 @@ void SteerKeya(int steerSpeed)
       KeyaBusSendData.buf[5] = lowByte(actualSpeed);
       KeyaBusSendData.buf[6] = 0x00;
       KeyaBusSendData.buf[7] = 0x00;
-      if (debugState == KEYA|| send_KEYA)
+      if (debugState == KEYA || send_KEYA)
         debugPrintln("pwmDrive > zero - anticlock-clockwise - steerSpeed " + String(steerSpeed));
     }
     Keya_Bus.write(KeyaBusSendData);
@@ -196,7 +199,8 @@ void KeyaBus_Receive()
       // TODO Yeah, if we ever see something here, fire off a disable, refuse to engage autosteer or..?
       uint32_t time = millis();
       keyaMotorStatus = !bitRead(KeyaBusReceiveData.buf[7], 0);
-      if(debugState == KEYA|| send_KEYA){
+      if (debugState == KEYA || send_KEYA)
+      {
         debugPrint(time);
         debugPrint(" ");
         debugPrint(time - hbTime);
@@ -256,9 +260,10 @@ void KeyaBus_Receive()
         if (bitRead(KeyaBusReceiveData.buf[7], 0))
         {
           if (steerSwitch == 0 && keyaMotorStatus == 1)
-          {            
-            keyaMotorStatus = !bitRead(KeyaBusReceiveData.buf[7], 0);  //necessario ??  #######################################
-            if(debugState == KEYA|| send_KEYA){
+          {
+            keyaMotorStatus = !bitRead(KeyaBusReceiveData.buf[7], 0); // necessario ??  #######################################
+            if (debugState == KEYA || send_KEYA)
+            {
               debugPrint("\r\nMotor disabled");
               debugPrint(" - set AS off");
             }
@@ -325,7 +330,7 @@ void KeyaBus_Receive()
         }
         else if (bitRead(KeyaBusReceiveData.buf[6], 6))
         {
-          if(debugState == KEYA|| send_KEYA)
+          if (debugState == KEYA || send_KEYA)
             debugPrintln("\r\nCAN disconnected");
         }
         else if (bitRead(KeyaBusReceiveData.buf[6], 7))
@@ -369,7 +374,8 @@ void KeyaBus_Receive()
         uint32_t time = millis();
         keyaTime = time;
         printIdAndReply(KeyaBusReceiveData.id, KeyaBusReceiveData.buf);
-        if(debugState == KEYA|| send_KEYA){
+        if (debugState == KEYA || send_KEYA)
+        {
           debugPrint(" current reply ");
           debugPrint(KeyaBusReceiveData.buf[4]);
         }
@@ -380,82 +386,85 @@ void KeyaBus_Receive()
       else if (isPatternMatch(KeyaBusReceiveData, keyaEncoderResponse, sizeof(keyaEncoderResponse)))
       {
         printIdAndReply(KeyaBusReceiveData.id, KeyaBusReceiveData.buf);
-        keyaEncoderValue = KeyaBusReceiveData.buf[7] << 24 | 
-            KeyaBusReceiveData.buf[6] << 16 | 
-            KeyaBusReceiveData.buf[5] << 8 | 
-            KeyaBusReceiveData.buf[4];
-        if(debugState == KEYA|| send_KEYA){
+        keyaEncoderValue = KeyaBusReceiveData.buf[7] << 24 |
+                           KeyaBusReceiveData.buf[6] << 16 |
+                           KeyaBusReceiveData.buf[5] << 8 |
+                           KeyaBusReceiveData.buf[4];
+        if (debugState == KEYA || send_KEYA)
+        {
           debugPrint(" encoder reply ");
           debugPrint(keyaEncoderValue);
         }
 
-        //so right is positive
-        keyaEncoderValue=keyaEncoderValue*-1;
+        // so right is positive
+        keyaEncoderValue = keyaEncoderValue * -1;
 
-        if(keyaEncoderValueOld>keyaEncoderValue)
-          keyaDir=-1;
-        else if(keyaEncoderValueOld<keyaEncoderValue)
-          keyaDir=1;
+        if (keyaEncoderValueOld > keyaEncoderValue)
+          keyaDir = -1;
+        else if (keyaEncoderValueOld < keyaEncoderValue)
+          keyaDir = 1;
         keyaEncoderValueOld = keyaEncoderValue;
-
 
         switch (keyaState)
         {
-        case 0:       //start point
-          if(keyaDir==1)
-            keyaState=1;
+        case 0: // start point
+          if (keyaDir == 1)
+            keyaState = 1;
           else
-            keyaState=3;
+            keyaState = 3;
           break;
-        
-        case 1:     //giro a dx
-          if(keyaDir==-1)
-            keyaState=2;
-          else{
-            keyaEncoderValueFreeze=keyaEncoderValue;
-          }
-          break;
-        
-        case 2:     //cambio verso sx
-          if(keyaEncoderValueFreeze-keyaEncoderValue>steerSettings.keyaDirOffset)
-            keyaState=3;
-          else if(keyaEncoderValue>keyaEncoderValueFreeze)
-            keyaState=1;
-          keyaEncoderValue=keyaEncoderValueFreeze;
-          break;
-        
-        case 3:     //giro a sx
-          keyaEncoderValue += steerSettings.keyaDirOffset;
-          if(keyaDir==1)
-            keyaState=4;
-          else{
-            keyaEncoderValueFreeze=keyaEncoderValue;
-          }
-          break;
-        
-        case 4:     //cambio a dx
-          keyaEncoderValue += steerSettings.keyaDirOffset;
-          if(keyaEncoderValue-keyaEncoderValueFreeze>steerSettings.keyaDirOffset)
-            keyaState=1;
-          else if(keyaEncoderValue<keyaEncoderValueFreeze)
-            keyaState=3;
 
-          keyaEncoderValue=keyaEncoderValueFreeze;
+        case 1: // giro a dx - turn right
+          if (keyaDir == -1)
+            keyaState = 2;
+          else
+          {
+            keyaEncoderValueFreeze = keyaEncoderValue;
+          }
           break;
-        
+
+        case 2: // cambio verso sx - turn left
+          if (keyaEncoderValueFreeze - keyaEncoderValue > steerSettings.keyaDirOffset)
+            keyaState = 3;
+          else if (keyaEncoderValue > keyaEncoderValueFreeze)
+            keyaState = 1;
+          keyaEncoderValue = keyaEncoderValueFreeze;
+          break;
+
+        case 3: // giro a sx - turn right
+          keyaEncoderValue += steerSettings.keyaDirOffset;
+          if (keyaDir == 1)
+            keyaState = 4;
+          else
+          {
+            keyaEncoderValueFreeze = keyaEncoderValue;
+          }
+          break;
+
+        case 4: // cambio a dx - turn right
+          keyaEncoderValue += steerSettings.keyaDirOffset;
+          if (keyaEncoderValue - keyaEncoderValueFreeze > steerSettings.keyaDirOffset)
+            keyaState = 1;
+          else if (keyaEncoderValue < keyaEncoderValueFreeze)
+            keyaState = 3;
+
+          keyaEncoderValue = keyaEncoderValueFreeze;
+          break;
+
         default:
-          keyaState=0;
+          keyaState = 0;
           break;
         }
 
-        if(steerSettings.keyaAckermanFix != 100){
+        if (steerSettings.keyaAckermanFix != 100)
+        {
           keyaEncoderDiff = keyaEncoderValue - keyaEncoderFinalOld;
-          
-          if(keyaDir==1) // turning right
+
+          if (keyaDir == 1) // turning right
             keyaEncoderDiff *= steerSettings.keyaAckermanFix;
           else
             keyaEncoderDiff *= 100;
-          
+
           keyaEncoderVirtual += keyaEncoderDiff;
           keyaEncoder = (float)keyaEncoderVirtual / 600.0f;
           keyaEncoderFinalOld = keyaEncoderValue;
@@ -469,20 +478,23 @@ void KeyaBus_Receive()
       {
         printIdAndReply(KeyaBusReceiveData.id, KeyaBusReceiveData.buf);
         keyaEncoderSpeed = KeyaBusReceiveData.buf[5] << 8 | KeyaBusReceiveData.buf[4];
-        if(keyaEncoderSpeed>65000)
-          keyaEncoderSpeed=keyaEncoderSpeed-65536;
-        if(debugState == KEYA|| send_KEYA){
+        if (keyaEncoderSpeed > 65000)
+          keyaEncoderSpeed = keyaEncoderSpeed - 65536;
+        if (debugState == KEYA || send_KEYA)
+        {
           debugPrint(" encoder speed reply ");
           debugPrint(keyaEncoderSpeed);
         }
 
-        if(keyaEncoderSpeed!=0){
-          KeyaCurrentRapport = KeyaCurrentSensorReading/abs(keyaEncoderSpeed)*200;
-          KeyaCurrentRapportSmooth = KeyaCurrentRapportSmooth*0.7 + KeyaCurrentRapport*0.3;
+        if (keyaEncoderSpeed != 0)
+        {
+          KeyaCurrentRapport = KeyaCurrentSensorReading / abs(keyaEncoderSpeed) * 200;
+          KeyaCurrentRapportSmooth = KeyaCurrentRapportSmooth * 0.7 + KeyaCurrentRapport * 0.3;
 
-          if(debugState == KEYA|| send_KEYA){
-          debugPrint(" current/speed ");
-          debugPrint(KeyaCurrentRapportSmooth);
+          if (debugState == KEYA || send_KEYA)
+          {
+            debugPrint(" current/speed ");
+            debugPrint(KeyaCurrentRapportSmooth);
           }
         }
       }
@@ -541,7 +553,8 @@ void KeyaBus_Receive()
   }
 }
 
-void getKeyaInfo(){
+void getKeyaInfo()
+{
   keyaCommand(keyaVoltageQuery);
   delay(10);
   KeyaBus_Receive();

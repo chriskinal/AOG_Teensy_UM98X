@@ -18,63 +18,63 @@
 #endif // ARDUINO_TEENSY41
 
 /************************* User Settings *************************/
-#define PCB_VERSION_0_1  // PCB version 0.1
-//#define PCB_VERSION_1_0  // PCB version 1.0
+#define PCB_VERSION_0_1 // PCB version 0.1
+// #define PCB_VERSION_1_0  // PCB version 1.0
 
 bool udpPassthrough = false;  // False = GPS neeeds to send GGA, VTG & HPR messages. True = GPS needs to send KSXT messages only.
 bool makeOGI = true;          // Set to true to make PAOGI messages. Else PANDA message will be made.
 const bool invertRoll = true; // Invert Roll in BNO
 
-struct Config {
-    bool using2serialGPS=true;
-    bool usingWT61=false;
-    float intervalINS=0.1; // 0.1 or 0.05 -> 10 or 20 Hz
-    bool useKalmanForSensor=true;
-    float minSpeedKalman=0.5; //m /s
-    float secondsVarianceBuffer=3; // pay attention to max varianceBuffer len in zKalmanKeya
-    float kalmanR=0.1;
-    float kalmanQ=0.0001;
+struct Config
+{
+  bool using2serialGPS = true;
+  bool usingWT61 = false;
+  float intervalINS = 0.1; // 0.1 or 0.05 -> 10 or 20 Hz
+  bool useKalmanForSensor = true;
+  float minSpeedKalman = 0.5;      // m /s
+  float secondsVarianceBuffer = 3; // pay attention to max varianceBuffer len in zKalmanKeya
+  float kalmanR = 0.1;
+  float kalmanQ = 0.0001;
 };
 
 Config settings;
 
 #ifdef PCB_VERSION_0_1
 // Serial Ports
-#define SerialRTK Serial2             // RTK radio
-#define SerialWT61 Serial3            // IMU
-#define SerialGPS2 Serial4            // Main postion receiver (INS)
-#define SerialGPS Serial7           // Main postion receiver (GGA, VTG)
-#define SerialDebug Serial8         // Debug TX only
+#define SerialRTK Serial2   // RTK radio
+#define SerialWT61 Serial3  // IMU
+#define SerialGPS2 Serial4  // Main postion receiver (INS)
+#define SerialGPS Serial7   // Main postion receiver (GGA, VTG)
+#define SerialDebug Serial8 // Debug TX only
 
-// Status LED's   
-#define GGAReceivedLED 12        // blink if GGA received, ON if INS OK, OFF no GGA     blue
-#define DEBUG_LED 13             // ON if debugState > SETUP                          red on board
-#define AUTOSTEER_ACTIVE_LED 10  // blink if hello from AOG, ON if steering,          red
-#define CAN_ACTIVE_LED 9         // ON if keya heartbeat,                             yellow
-#define DEBUG_PIN 37             //button
+// Status LED's
+#define GGAReceivedLED 12       // blink if GGA received, ON if INS OK, OFF no GGA     blue
+#define DEBUG_LED 13            // ON if debugState > SETUP                          red on board
+#define AUTOSTEER_ACTIVE_LED 10 // blink if hello from AOG, ON if steering,          red
+#define CAN_ACTIVE_LED 9        // ON if keya heartbeat,                             yellow
+#define DEBUG_PIN 37            // button
 
 #endif
-
 
 #ifdef PCB_VERSION_1_0
 // Serial Ports
-#define SerialRTK Serial2             // RTK radio
-#define SerialWT61 Serial1            // IMU
-#define SerialGPS2 Serial4            // Main postion receiver (INS)
-#define SerialGPS Serial3           // Main postion receiver (GGA, VTG)
-#define SerialDebug Serial8         // Debug TX only
+#define SerialRTK Serial2   // RTK radio
+#define SerialWT61 Serial1  // IMU
+#define SerialGPS2 Serial4  // Main postion receiver (INS)
+#define SerialGPS Serial3   // Main postion receiver (GGA, VTG)
+#define SerialDebug Serial8 // Debug TX only
 
-// Status LED's   
-#define GGAReceivedLED 38        // blink if GGA received, ON if INS OK, OFF no GGA     red
-#define DEBUG_LED 13             // ON if debugState > SETUP                          red on board
-#define CAN_ACTIVE_LED 37        // ON if keya heartbeat, blink if hello from AOG but no keya      green
-#define DEBUG_PIN 3             //button
+// Status LED's
+#define GGAReceivedLED 38 // blink if GGA received, ON if INS OK, OFF no GGA     red
+#define DEBUG_LED 13      // ON if debugState > SETUP                          red on board
+#define CAN_ACTIVE_LED 37 // ON if keya heartbeat, blink if hello from AOG but no keya      green
+#define DEBUG_PIN 3       // button
 
 #endif
 
-const int32_t baudAOG = 115200;       // USB connection speed
-const int32_t baudGPS = 460800;       // UM982 connection speed
-const int32_t baudRTK = 9600;         // most are using Xbee radios with default of 115200
+const int32_t baudAOG = 115200; // USB connection speed
+const int32_t baudGPS = 460800; // UM982 connection speed
+const int32_t baudRTK = 9600;   // most are using Xbee radios with default of 115200
 
 // Send data to AgIO via usb
 bool sendUSB = false;
@@ -105,8 +105,8 @@ uint32_t READ_BNO_TIME = 0; // Used stop BNO data pile up (This version is witho
 
 uint8_t debug_pin = DEBUG_PIN;
 
-uint32_t gpsReadyTime = 0;       // Used for GGA timeout      
-uint32_t KeyaBeatTime = 0;       // Used for Keya timeout
+uint32_t gpsReadyTime = 0; // Used for GGA timeout
+uint32_t KeyaBeatTime = 0; // Used for Keya timeout
 
 void errorHandler();
 void GGA_Handler();
@@ -141,9 +141,9 @@ unsigned int portMy = 5120;           // port of this module
 unsigned int AOGNtripPort = 2233;     // port NTRIP data from AOG comes in
 unsigned int AOGAutoSteerPort = 8888; // port Autosteer data from AOG comes in
 unsigned int portDestination = 9999;  // Port of AOG that listens
-unsigned int portDebugOUT = 6969;   // Port debug
-unsigned int portDebugIN = 9696;    // Port debug
-unsigned int portPlot = 6968;       // Port plot
+unsigned int portDebugOUT = 6969;     // Port debug
+unsigned int portDebugIN = 9696;      // Port debug
+unsigned int portPlot = 6968;         // Port plot
 char Eth_NTRIP_packetBuffer[512];     // buffer for receiving ntrip data
 
 // An EthernetUDP instance to let us send and receive packets over UDP
@@ -177,9 +177,9 @@ BNO080 bno08x;
 byte ackPacket[72] = {0xB5, 0x62, 0x01, 0x3C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 constexpr int serial_buffer_size = 2040;
-uint8_t GPSrxbuffer[serial_buffer_size];  // Extra serial rx buffer
-uint8_t GPStxbuffer[serial_buffer_size];  // Extra serial tx buffer
-uint8_t RTKrxbuffer[serial_buffer_size];  // Extra serial rx buffer
+uint8_t GPSrxbuffer[serial_buffer_size]; // Extra serial rx buffer
+uint8_t GPStxbuffer[serial_buffer_size]; // Extra serial tx buffer
+uint8_t RTKrxbuffer[serial_buffer_size]; // Extra serial rx buffer
 const int tmp_serial_buffer_size = 2048;
 uint8_t tmpGPSrxbuffer[tmp_serial_buffer_size]; // Temp serial rx buffer for detecting / configuring the UM982
 uint8_t tmpGPStxbuffer[tmp_serial_buffer_size]; // Temp serial tx buffer for detecting / configuring the UM982
@@ -203,11 +203,12 @@ NMEAParser<3> parser;
 bool blink = false;
 
 bool Autosteer_running = false; // Auto set off in autosteer setup
-bool Ethernet_running = false; // Auto set on in ethernet setup
+bool Ethernet_running = false;  // Auto set on in ethernet setup
 
 float tempWT;
 
-enum debugList {
+enum debugList
+{
   SETUP,
   EXPERIMENT,
   ROLL,
@@ -230,9 +231,10 @@ bool send_INFO = false;
 int8_t debugButton = 1;
 uint32_t debugTime = 0;
 unsigned long lastPlotTime = 0;
-const unsigned long plotInterval = 100;  // ms
+const unsigned long plotInterval = 100; // ms
 
-struct CalibrationData {
+struct CalibrationData
+{
   float wheelBase = 2.4;
   float IMUtoANTx = 0.0;
   float IMUtoANTy = 0.5;
@@ -261,14 +263,11 @@ void setup()
   debugPrintln("Start setup");
   debugPrintln();
 
-
   if (settings.usingWT61)
     setupWT61();
 
-
   debugPrintln("\r\nStarting AutoSteer...");
   autosteerSetup();
-
 
   debugPrintln("\r\nStarting Ethernet...");
   EthernetStart();
@@ -277,7 +276,8 @@ void setup()
 
   if (gotUM981)
     configureUM981();
-  else {
+  else
+  {
     checkUM982();
     if (gotUM982)
       configureUM982();
@@ -289,9 +289,8 @@ void setup()
   parser.setErrorHandler(errorHandler);
   parser.addHandler("G-GGA", GGA_Handler);
   parser.addHandler("G-VTG", VTG_Handler);
-  if(usingUM982)
+  if (usingUM982)
     parser.addHandler("G-HPR", HPR_Handler);
-
 
   SerialGPS2.begin(baudGPS);
   SerialGPS.begin(baudGPS);
@@ -304,21 +303,19 @@ void setup()
 
   debugPrintln("Serial, SerialRTK, SerialGPS initialized");
 
-  //debugPrintln("\r\nStarting BNO085...");
-  //imuSetup();
+  // debugPrintln("\r\nStarting BNO085...");
+  // imuSetup();
 
-  useBNO08x=false; //*********************************
+  useBNO08x = false; //*********************************
 
   delay(100);
-  //debugPrint("useBNO08x = ");
-  //debugPrintln(useBNO08x);
+  // debugPrint("useBNO08x = ");
+  // debugPrintln(useBNO08x);
 
   // Keya support
   CAN_Setup();
 
-
   debugPrintln("\r\nEnd setup, waiting for GPS...\r\n");
-
 }
 
 void loop()
@@ -342,7 +339,7 @@ void loop()
     else if (settings.using2serialGPS || usingUM982)
     {
       char c = SerialGPS.read();
-      if(debugState == GPS || send_GPS)
+      if (debugState == GPS || send_GPS)
         debugPrint(c);
       parser << c;
     }
@@ -352,7 +349,7 @@ void loop()
     }
   }
 
-  if(settings.using2serialGPS && SerialGPS2.available())
+  if (settings.using2serialGPS && SerialGPS2.available())
   {
     readSerialIns(SerialGPS2.read());
   }
@@ -374,34 +371,38 @@ void loop()
   //   readBNO();
   // }
 
-  //turn off LED if GGa timeout 3 sec
+  // turn off LED if GGa timeout 3 sec
   if (systick_millis_count - gpsReadyTime > 3000)
     digitalWrite(GGAReceivedLED, LOW);
 
-  if(systick_millis_count - KeyaBeatTime > 5000){
-    if(!Autosteer_running)
+  if (systick_millis_count - KeyaBeatTime > 5000)
+  {
+    if (!Autosteer_running)
       digitalWrite(CAN_ACTIVE_LED, LOW);
     keyaDetected = false;
   }
 
-  if (Autosteer_running){
+  if (Autosteer_running)
+  {
     autosteerLoop();
   }
-  else{
+  else
+  {
     ReceiveUdp();
 
-    #ifdef PCB_VERSION_0_1
+#ifdef PCB_VERSION_0_1
     digitalWrite(AUTOSTEER_ACTIVE_LED, 0);
-    #endif
+#endif
 
-    #ifdef PCB_VERSION_1_0
-    if(!keyaDetected)
+#ifdef PCB_VERSION_1_0
+    if (!keyaDetected)
       digitalWrite(CAN_ACTIVE_LED, 0);
-    #endif
+#endif
   }
 
-   // Send plot data every 100ms
-  if (millis() - lastPlotTime >= plotInterval && send_WAS) {
+  // Send plot data every 100ms
+  if (millis() - lastPlotTime >= plotInterval && send_WAS)
+  {
     sendPlotData();
     lastPlotTime = millis();
   }

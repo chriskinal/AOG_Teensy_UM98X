@@ -12,7 +12,7 @@
 uint8_t keyaEncoderQuery[] = {0x40, 0x04, 0x21, 0x01};
 uint8_t keyaEncoderSpeedQuery[] = {0x40, 0x03, 0x21, 0x01};
 
-float KalmanWheelAngle   = 0.0;
+float KalmanWheelAngle = 0.0;
 
 ////////////////// User Settings /////////////////////////
 
@@ -24,7 +24,7 @@ float KalmanWheelAngle   = 0.0;
      122hz = 1
      3921hz = 2
 */
-//#define PWM_Frequency 0
+// #define PWM_Frequency 0
 
 /////////////////////////////////////////////
 
@@ -76,7 +76,7 @@ SimpleKalmanFilter wheelSensor(0.1, 0.1, 0.1);
 
 #ifdef ARDUINO_TEENSY41
 uint8_t autoSteerUdpData[100]; // udp send and receive buffer
-//uint8_t autoSteerUdpData[UDP_TX_PACKET_MAX_SIZE]; // Buffer For Receiving UDP Data
+// uint8_t autoSteerUdpData[UDP_TX_PACKET_MAX_SIZE]; // Buffer For Receiving UDP Data
 #endif
 
 // loop time variables in milliseconds
@@ -124,7 +124,7 @@ bool guidanceStatusChanged = false;
 
 // speed sent as *10
 float gpsSpeed = 0;
-float speed = 0;  //from VTG in m/s
+float speed = 0; // from VTG in m/s
 
 // steering variables
 float steerAngleActual = 0;
@@ -140,8 +140,7 @@ float dualWheelAngleWT61 = 0;
 float XTE = 0;
 bool useADS = false;
 float steerAngleActualOld = 0;
-float insSpeed=0;
-
+float insSpeed = 0;
 
 // pwm variables
 int16_t pwmDrive = 0, pwmDisplay = 0;
@@ -155,7 +154,7 @@ uint8_t currentState = 1, reading, previous = 0;
 // Variables for settings
 struct Storage
 {
-  uint8_t Kp = 100;     // proportional gain
+  uint8_t Kp = 100;   // proportional gain
   uint8_t lowPWM = 1; // band of no action
   int16_t wasOffset = 0;
   uint8_t minPWM = 2;
@@ -171,7 +170,7 @@ Storage steerSettings; // 25 bytes
 // Variables for settings - 0 is false
 struct Setup
 {
-  uint8_t InvertWAS = 0;   //
+  uint8_t InvertWAS = 0;         //
   uint8_t IsRelayActiveHigh = 0; // if zero, active low (default)
   uint8_t MotorDriveDirection = 0;
   uint8_t SingleInputWAS = 1;
@@ -229,7 +228,7 @@ void autosteerSetup()
   pinMode(WORKSW_PIN, INPUT_PULLUP);
   pinMode(STEERSW_PIN, INPUT_PULLUP);
   pinMode(DEBUG_PIN, INPUT_PULLUP);
-  
+
   // pinMode(DIR1_RL_ENABLE, OUTPUT);
 
   // // Disable digital inputs for analog input pins
@@ -244,7 +243,7 @@ void autosteerSetup()
   if (adc.testConnection())
   {
     debugPrintln("ADC Connection OK");
-    useADS=true;  //true
+    useADS = true; // true
   }
   else
   {
@@ -264,12 +263,14 @@ void autosteerSetup()
     EEPROM.put(40, steerConfig);
     EEPROM.put(60, networkAddress);
     // EEPROM.put(70, analogWork);
-    if (steerConfig.CytronDriver){   //default tractor
+    if (steerConfig.CytronDriver)
+    { // default tractor
       EEPROM.put(100, calibrationData);
       EEPROM.put(200, settings);
     }
-    else {
-      EEPROM.put(150, calibrationData);   //second tractor
+    else
+    {
+      EEPROM.put(150, calibrationData); // second tractor
       EEPROM.put(250, settings);
     }
   }
@@ -279,41 +280,42 @@ void autosteerSetup()
     EEPROM.get(40, steerConfig);
     EEPROM.get(60, networkAddress);
     // EEPROM.get(70, analogWork);
-    if (steerConfig.CytronDriver){   //default tractor
+    if (steerConfig.CytronDriver)
+    { // default tractor
       EEPROM.get(100, calibrationData);
       EEPROM.get(200, settings);
     }
-    else{
-      EEPROM.get(150, calibrationData);   //second tractor
+    else
+    {
+      EEPROM.get(150, calibrationData); // second tractor
       EEPROM.get(250, settings);
     }
-    //printCalibrationData();
-    //printSettings();
+    // printCalibrationData();
+    // printSettings();
 
     if (isnan(calibrationData.configFlag))
       calibrationData.configFlag = 0;
 
     // to be removed??
-    if (isnan(settings.kalmanR)) {
-        settings = {
-            true,   // using2serialGPS
-            false,  // usingWT61
-            0.1f,   // interval_INS
-            true,   // useKalmanForSensor
-            0.5f,   // minSpeedKalman
-            3.0f,   // secondsVarBuf
-            0.3f,   // KalmanR
-            0.0001f // KalmanQ
-        };
+    if (isnan(settings.kalmanR))
+    {
+      settings = {
+          true,   // using2serialGPS
+          false,  // usingWT61
+          0.1f,   // interval_INS
+          true,   // useKalmanForSensor
+          0.5f,   // minSpeedKalman
+          3.0f,   // secondsVarBuf
+          0.3f,   // KalmanR
+          0.0001f // KalmanQ
+      };
     }
-
   }
 
   steerSettingsInit();
   steerConfigInit();
 
   debugPrintln("Autosteer setup, waiting for AgOpenGPS");
-
 
   adc.setSampleRate(ADS1115_REG_CONFIG_DR_128SPS); // 128 samples per second
   adc.setGain(ADS1115_REG_CONFIG_PGA_6_144V);
@@ -402,7 +404,7 @@ void autosteerLoop()
 
     if (steerConfig.ShaftEncoder)
     {
-      makeOGI=false;
+      makeOGI = false;
     }
     else
       makeOGI = true;
@@ -428,7 +430,7 @@ void autosteerLoop()
     {
       if (keyaDetected) // means Keya HB was detected
       {
-        sensorReading =  KeyaCurrentRapportSmooth; // then use keya current data
+        sensorReading = KeyaCurrentRapportSmooth; // then use keya current data
         sensorReading = min(sensorReading, 255);
       }
       // else // otherwise continue using analog input on PCB
@@ -457,9 +459,10 @@ void autosteerLoop()
     switchByte |= (steerSwitch << 1);  // put steerswitch status in bit 1 position
     switchByte |= workSwitch;
 
-    if(debugState == SWITCH){
+    if (debugState == SWITCH)
+    {
       debugPrint("SteerSwitch: ");
-      debugPrint(steerSwitch); 
+      debugPrint(steerSwitch);
       debugPrint(" workSwitch: ");
       debugPrintln(workSwitch);
     }
@@ -472,7 +475,8 @@ void autosteerLoop()
       #endif
     */
 
-    if (useADS){
+    if (useADS)
+    {
       // get steering position
       if (steerConfig.SingleInputWAS) // Single Input ADS
       {
@@ -503,21 +507,24 @@ void autosteerLoop()
         steerAngleSens = (steerAngleSens * steerSettings.AckermanFix);
     }
 
-    float angleDiff = (keyaEncoder /  steerSettings.keyaSteerSensorCounts) - steerAngleActualOld;
+    float angleDiff = (keyaEncoder / steerSettings.keyaSteerSensorCounts) - steerAngleActualOld;
     KalmanWheelAngle += angleDiff;
-    steerAngleActualOld = keyaEncoder /  steerSettings.keyaSteerSensorCounts;
+    steerAngleActualOld = keyaEncoder / steerSettings.keyaSteerSensorCounts;
 
     // DETERMINE ACTUAL STEERING POSITION
 
     //   ***** make sure that negative steer angle makes a left turn and positive value is a right turn *****
-    if (steerConfig.InvertWAS) {
+    if (steerConfig.InvertWAS)
+    {
       steerAngleActual = steerAngleSens;
     }
-    else {
+    else
+    {
       steerAngleActual = KalmanWheelAngle;
     }
 
-    if(debugState == WAS || send_WAS){
+    if (debugState == WAS || send_WAS)
+    {
       debugPrint("sens:");
       debugPrint(steerAngleSens);
       debugPrint(",");
@@ -525,7 +532,7 @@ void autosteerLoop()
       debugPrint(insWheelAngle);
       debugPrint(",");
       debugPrint("keyaAngle:");
-      debugPrint(keyaEncoder/steerSettings.keyaSteerSensorCounts);
+      debugPrint(keyaEncoder / steerSettings.keyaSteerSensorCounts);
       debugPrint(",");
       debugPrint("Kalman:");
       debugPrintln(KalmanWheelAngle);
@@ -549,17 +556,17 @@ void autosteerLoop()
       //   digitalWrite(DIR1_RL_ENABLE, 1);
 
       steerAngleError = steerAngleActual - steerAngleSetPoint; // calculate the steering error
-      //steerAngleError = KalmanWheelAngle - steerAngleSetPoint; // calculate the steering error
-      // if (abs(steerAngleError)< steerSettings.lowPWM) steerAngleError = 0;
+      // steerAngleError = KalmanWheelAngle - steerAngleSetPoint; // calculate the steering error
+      //  if (abs(steerAngleError)< steerSettings.lowPWM) steerAngleError = 0;
 
       calcSteeringPID(); // do the pid
-      if(speed > 6)
+      if (speed > 6)
         pwmDrive = 0; // turn off steering motor
-      motorDrive();      // out to motors the pwm value
+      motorDrive();   // out to motors the pwm value
 
-      #ifdef PCB_VERSION_0_1
+#ifdef PCB_VERSION_0_1
       digitalWrite(AUTOSTEER_ACTIVE_LED, 1);
-      #endif
+#endif
     }
     else
     {
@@ -581,15 +588,15 @@ void autosteerLoop()
 
       pwmDrive = 0; // turn off steering motor
       motorDrive(); // out to motors the pwm value
-      // Autosteer Led goes back to RED when autosteering is stopped
-      #ifdef PCB_VERSION_0_1
+// Autosteer Led goes back to RED when autosteering is stopped
+#ifdef PCB_VERSION_0_1
       digitalWrite(AUTOSTEER_ACTIVE_LED, systick_millis_count % 512 > 256);
-      #endif
+#endif
 
-      #ifdef PCB_VERSION_1_0
-      if(!keyaDetected)
+#ifdef PCB_VERSION_1_0
+      if (!keyaDetected)
         digitalWrite(CAN_ACTIVE_LED, systick_millis_count % 512 > 256);
-      #endif
+#endif
     }
   } // end of timed loop
 

@@ -23,9 +23,9 @@ char vtgHeading[12] = {};
 char speedKnots[10] = {};
 
 // INS
-bool insActive=false;
-bool insStart=false;
-uint8_t index1=0;
+bool insActive = false;
+bool insStart = false;
+uint8_t index1 = 0;
 uint8_t numArg;
 char bufferSERIAL[20];
 char insStatus[20];
@@ -36,13 +36,12 @@ char velocity[16];
 // HPR
 char solQuality[2];
 
-
 // If odd characters showed up.
 void errorHandler()
 {
-  //if(debugState == GPS || send_GPS)
-    //debugPrintln("parser error");
-    return;
+  // if(debugState == GPS || send_GPS)
+  // debugPrintln("parser error");
+  return;
 }
 
 void GGA_Handler() // Rec'd GGA
@@ -73,7 +72,7 @@ void GGA_Handler() // Rec'd GGA
   // time of last DGPS update
   parser.getArg(12, ageDGPS);
 
-  if (strstr(insStatus, "INS_SOLUTION")!=NULL) // led always on if INS is aligned
+  if (strstr(insStatus, "INS_SOLUTION") != NULL) // led always on if INS is aligned
   {
     digitalWrite(GGAReceivedLED, HIGH);
   }
@@ -90,7 +89,8 @@ void GGA_Handler() // Rec'd GGA
 
   gpsReadyTime = systick_millis_count; // Used for GGA timeout (LED's ETC)
 
-  if(debugState == GPS || send_GPS){
+  if (debugState == GPS || send_GPS)
+  {
     debugPrint(systick_millis_count);
     debugPrint("  GGA  ");
   }
@@ -99,11 +99,11 @@ void GGA_Handler() // Rec'd GGA
 void VTG_Handler()
 {
   // vtg heading
-  parser.getArg(0, vtgHeading);  //i can use for reverse detection (180° from dualHeading)
+  parser.getArg(0, vtgHeading); // i can use for reverse detection (180° from dualHeading)
 
   // vtg Speed knots
   parser.getArg(4, speedKnots);
-  if(atof(speedKnots)<0.2)
+  if (atof(speedKnots) < 0.2)
     snprintf(speedKnots, 5, "0.0");
   speed = atof(speedKnots) * 1852 / 3600; // m/s
 
@@ -114,139 +114,155 @@ void VTG_Handler()
   // }
 
   float headingVTG = atof(vtgHeading);
-  if(abs((int)(headingVTG-atof(insHeading))%360)>120 && speed>0.5)  //reverse
-    workingDir=-1;
+  if (abs((int)(headingVTG - atof(insHeading)) % 360) > 120 && speed > 0.5) // reverse
+    workingDir = -1;
   else
-    workingDir=1;
+    workingDir = 1;
 
-  if(debugState == GPS || send_GPS){
+  if (debugState == GPS || send_GPS)
+  {
     debugPrint(systick_millis_count);
     debugPrint("  VTG  ");
   }
 }
 
-void DegreesToDegMinSec(double x, char* result, int resultSize)
+void DegreesToDegMinSec(double x, char *result, int resultSize)
 {
   int deg = x;
   double minutesRemainder = abs(x - deg) * 60;
-  if(minutesRemainder<10)
+  if (minutesRemainder < 10)
     snprintf(result, resultSize, "%02d0%.8f", deg, minutesRemainder);
   else
-  snprintf(result, resultSize, "%02d%.8f", deg, minutesRemainder);
+    snprintf(result, resultSize, "%02d%.8f", deg, minutesRemainder);
 }
 
-void readSerialIns(char c){
-      if(c == '#' || insActive){
-        insActive = true;
-        if (c == ';'){
-          numArg = 2;
-          index1=0;
-          insStart=true;
-          for(int g=0; g<20; g++)
-            bufferSERIAL[g] = '\0';
-          if(debugState == GPS || send_GPS){
-            debugPrint(systick_millis_count);
-            debugPrint("  INS  ");
-          }
-        }
-        else if(c == ',' && insStart){
-          index1++;
-          switch(numArg){
-            case 2: //INSstatus
-              for(int g=0; g<20; g++){
-                insStatus[g] = bufferSERIAL[g];
-              }
-              if(debugState == GPS || send_GPS){
-                debugPrint("INSstatus: ");
-                debugPrint(bufferSERIAL);
-                debugPrint("  ");
-              }
-              break;
-            case 4: //latitude
-              if(debugState == GPS || send_GPS){
-                debugPrint("latitude: ");
-                debugPrint(bufferSERIAL);
-                debugPrint("  ");
-              }
-              DegreesToDegMinSec(atof(bufferSERIAL), insLatitude, 12);
-              break;
-            case 5: //longitude
-              if(debugState == GPS || send_GPS){
-                debugPrint("longitude: ");
-                debugPrint(bufferSERIAL);
-                debugPrint("  ");
-              }
-              DegreesToDegMinSec(atof(bufferSERIAL), insLongitude, 12);
-              break;
-            case 11: //roll
-              if(debugState == GPS || send_GPS){
-                debugPrint("roll:");
-                debugPrint(bufferSERIAL);
-                debugPrint("  ");
-              }
-              for(int g=0; g<5; g++)
-                insRoll[g] = bufferSERIAL[g];
-              insRoll[5] = '\0';
-              break;
-            case 12: //pitch
-              if(debugState == GPS || send_GPS){
-                debugPrint("pitch: ");
-                debugPrint(bufferSERIAL);
-                debugPrint("  ");
-              }
-              for(int g=0; g<5; g++)
-                insPitch[g] = bufferSERIAL[g];
-              insPitch[5] = '\0';
-              break;
-            case 13: //heading
-              if(debugState == GPS || send_GPS){
-                debugPrint("heading: ");
-                debugPrint(bufferSERIAL);
-                debugPrint("  ");
-              }
-              for(int g=0; g<6; g++)
-                insHeading[g] = bufferSERIAL[g];
-              insHeading[6] = '\0';
-              break;
-            // case 8: //north vel
-            //   if(debugState == EXPERIMENT){
-            //     debugPrint("north_vel: ");
-            //     debugPrint(atof(bufferSERIAL));
-            //   }
-            //   for(int g=0; g<6; g++)
-            //     velocity[g] = bufferSERIAL[g];
-            //   velocity[6] = '\0';
-            //   break;
-            // case 9: //east vel
-            //   if(debugState == EXPERIMENT){
-            //     debugPrint(" east_vel: ");
-            //     debugPrint(atof(bufferSERIAL));
-            //   }
-            //   insSpeed = sqrt(sq(atof(velocity))+sq(atof(bufferSERIAL)));
-            //   if(debugState == GPS || debugState == EXPERIMENT){
-            //     debugPrint(" vel: ");
-            //     debugPrintln(insSpeed);
-            //   }
-            //   break;
-          }
-          numArg++;
-          for(int g=0; g<20; g++)
-            bufferSERIAL[g] = '\0';
-          index1=0;
-        }
-        else if(c == '*' && insStart){
-          insActive = false;
-          insStart = false;
-          dualReadyINS++;
-          angleStimeUpdate();
-        }
-        else if(insStart) {
-          bufferSERIAL[index1] = c;
-          index1++;
-        }
+void readSerialIns(char c)
+{
+  if (c == '#' || insActive)
+  {
+    insActive = true;
+    if (c == ';')
+    {
+      numArg = 2;
+      index1 = 0;
+      insStart = true;
+      for (int g = 0; g < 20; g++)
+        bufferSERIAL[g] = '\0';
+      if (debugState == GPS || send_GPS)
+      {
+        debugPrint(systick_millis_count);
+        debugPrint("  INS  ");
       }
-      else if(!settings.using2serialGPS)
-        parser << c;
+    }
+    else if (c == ',' && insStart)
+    {
+      index1++;
+      switch (numArg)
+      {
+      case 2: // INSstatus
+        for (int g = 0; g < 20; g++)
+        {
+          insStatus[g] = bufferSERIAL[g];
+        }
+        if (debugState == GPS || send_GPS)
+        {
+          debugPrint("INSstatus: ");
+          debugPrint(bufferSERIAL);
+          debugPrint("  ");
+        }
+        break;
+      case 4: // latitude
+        if (debugState == GPS || send_GPS)
+        {
+          debugPrint("latitude: ");
+          debugPrint(bufferSERIAL);
+          debugPrint("  ");
+        }
+        DegreesToDegMinSec(atof(bufferSERIAL), insLatitude, 12);
+        break;
+      case 5: // longitude
+        if (debugState == GPS || send_GPS)
+        {
+          debugPrint("longitude: ");
+          debugPrint(bufferSERIAL);
+          debugPrint("  ");
+        }
+        DegreesToDegMinSec(atof(bufferSERIAL), insLongitude, 12);
+        break;
+      case 11: // roll
+        if (debugState == GPS || send_GPS)
+        {
+          debugPrint("roll:");
+          debugPrint(bufferSERIAL);
+          debugPrint("  ");
+        }
+        for (int g = 0; g < 5; g++)
+          insRoll[g] = bufferSERIAL[g];
+        insRoll[5] = '\0';
+        break;
+      case 12: // pitch
+        if (debugState == GPS || send_GPS)
+        {
+          debugPrint("pitch: ");
+          debugPrint(bufferSERIAL);
+          debugPrint("  ");
+        }
+        for (int g = 0; g < 5; g++)
+          insPitch[g] = bufferSERIAL[g];
+        insPitch[5] = '\0';
+        break;
+      case 13: // heading
+        if (debugState == GPS || send_GPS)
+        {
+          debugPrint("heading: ");
+          debugPrint(bufferSERIAL);
+          debugPrint("  ");
+        }
+        for (int g = 0; g < 6; g++)
+          insHeading[g] = bufferSERIAL[g];
+        insHeading[6] = '\0';
+        break;
+        // case 8: //north vel
+        //   if(debugState == EXPERIMENT){
+        //     debugPrint("north_vel: ");
+        //     debugPrint(atof(bufferSERIAL));
+        //   }
+        //   for(int g=0; g<6; g++)
+        //     velocity[g] = bufferSERIAL[g];
+        //   velocity[6] = '\0';
+        //   break;
+        // case 9: //east vel
+        //   if(debugState == EXPERIMENT){
+        //     debugPrint(" east_vel: ");
+        //     debugPrint(atof(bufferSERIAL));
+        //   }
+        //   insSpeed = sqrt(sq(atof(velocity))+sq(atof(bufferSERIAL)));
+        //   if(debugState == GPS || debugState == EXPERIMENT){
+        //     debugPrint(" vel: ");
+        //     debugPrintln(insSpeed);
+        //   }
+        //   break;
+      }
+      numArg++;
+      for (int g = 0; g < 20; g++)
+        bufferSERIAL[g] = '\0';
+      index1 = 0;
+    }
+    else if (c == '*' && insStart)
+    {
+      insActive = false;
+      insStart = false;
+      dualReadyINS++;
+      angleStimeUpdate();
+    }
+    else if (insStart)
+    {
+      bufferSERIAL[index1] = c;
+      index1++;
+    }
+  }
+  else if (!settings.using2serialGPS)
+    parser << c;
 }
 
 // UM982 Support
@@ -264,24 +280,26 @@ void HPR_Handler()
   {
     rollDual = atof(umRoll); //-0.2
 
-    if(debugState == ROLL){
+    if (debugState == ROLL)
+    {
       debugPrint("rollDual:");
       debugPrint(rollDual);
     }
 
     rollDual = rollKF.updateEstimate(rollDual);
 
-    if(debugState == ROLL){
+    if (debugState == ROLL)
+    {
       debugPrint("rollKF:");
       debugPrint(rollDual);
       debugPrint(",angleWT:");
       debugPrintln(rollWT, 3);
     }
   }
-  
+
   dualReadyINS++;
 
-  if(debugState == GPS || send_GPS)
+  if (debugState == GPS || send_GPS)
     debugPrintln("  HPR  ");
 
   angleStimeUpdate();
@@ -299,8 +317,9 @@ void BuildNmea(void)
   strcat(nmea, fixTime);
   strcat(nmea, ",");
 
-  if(strstr(insStatus, "INS_SOLUTION")!=NULL && makeOGI) { //use INS if solution good
-    if(debugState == GPS || send_GPS)
+  if (strstr(insStatus, "INS_SOLUTION") != NULL && makeOGI)
+  { // use INS if solution good
+    if (debugState == GPS || send_GPS)
       debugPrintln("using INS");
 
     strcat(nmea, insLatitude);
@@ -315,8 +334,9 @@ void BuildNmea(void)
     strcat(nmea, lonEW);
     strcat(nmea, ",");
   }
-  else {
-    if(debugState == GPS || send_GPS)
+  else
+  {
+    if (debugState == GPS || send_GPS)
       debugPrintln("using GGA");
     strcat(nmea, latitude);
     strcat(nmea, ",");
@@ -386,7 +406,7 @@ void BuildNmea(void)
     Eth_udpPAOGI.endPacket();
   }
 
-  if(debugState == GPS || send_GPS)
+  if (debugState == GPS || send_GPS)
     debugPrintln("NMEA Sent");
 }
 
